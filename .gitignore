@@ -18,3 +18,11 @@ functest-kubernetes.egg-info
 *.egg-info
 *.out
 *.pdf
+#/sylva/build
+container-experience-kits/
+/sylva/image/etc/kubeconfig
+/sylva/image/stack-validation/config.json
+/sylva/image/stack-validation/k8s/
+/sylva/image/stack-validation/requirements.txt
+/sylva/image/stack-validation/validate.py
+__pycache__/
