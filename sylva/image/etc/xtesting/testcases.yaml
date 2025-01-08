@@ -19,9 +19,9 @@ tiers:
                         test: validateRT
                         #
                         # optional arguments are
-                        #   debug, to get more details of running test case
-                        #   NOT IMPLEMENTED YET: label, to run only on labeled nodes vs whole k8s cluster
-                        #   node, to run on single worker node vs whole k8s cluster
+                        #   debug: to get more details of running test case
+                        #   label: to run only on labeled nodes vs whole k8s cluster as listed in  kubectl get no -o json | jq -r ".items[].metadata.labels"
+                        #   node: to run on single worker node vs whole k8s cluster
                         #     as listed by  kubectl get no -o json | jq -r ".items[].metadata.name"
                         debug: true
                         #label:

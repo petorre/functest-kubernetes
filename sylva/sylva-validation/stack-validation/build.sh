@@ -1,19 +1,9 @@
-#! /bin/bash
+#!/bin/bash
 
+# Copyright (C) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-IMAGENAME="127.0.0.1:5000/stack-validation-xtesting"
-
-if [[ -z "${KUBECONFIG}" ]] && [[ -f ~/.kube/config ]]; then
-    KUBECONFIG=~/.kube/config
-fi
-
-if [[ ! -e "${KUBECONFIG}" ]]; then
-    echo "Error: no KUBECONFIG file"
-    exit 1
-fi
-
-cp -f "${KUBECONFIG}" "image/etc/kubeconfig"
+IMAGENAME="stack-validation"
 
 if [[ " $( docker image ls | grep -c "^${IMAGENAME}" || true ) " -eq 1 ]]; then
     docker rmi -f "${IMAGENAME}"

@@ -13,6 +13,7 @@ from xtesting.core import testcase  # pip install xtesting
 class XtestingValidate(testcase.TestCase):
     def run(self, **kwargs):
         #print(kwargs)
+        self.start_time = time.time()
         try:
             rj = None  # file to write results in JSON format
             os.makedirs(self.res_dir, exist_ok=True)
@@ -23,15 +24,16 @@ class XtestingValidate(testcase.TestCase):
                 except KeyError:
                     debug = False
                 try:
+                    label = kwargs["label"]
+                except KeyError:
+                    label = None
+                try:
                     node = kwargs["node"]
                 except KeyError:
                     node = None
-                val = validate.Validate(configfile=validate.CONFIGFILE, debug=debug)
+                val = validate.Validate(configfile=validate.CONFIGFILE, debug=debug, label=label, node=node)  # None for all labels, None for all nodes
                 if val.ready:
-                    val.run(test=test, node=node)  # None for all nodes
-                    self.start_time = val.start_time
-                else:
-                    self.start_time = time.time()
+                    val.run(test=test)  
                 rj = open('{}/result.json'.format(self.res_dir), 'w+')
                 #json.dump(val.endresj, rj, indent=4, sort_keys=True)
                 json.dump(val.endresj, rj, indent=2)
@@ -47,7 +49,6 @@ class XtestingValidate(testcase.TestCase):
                     #self.result = 1
                 except KeyError:
                     self.result = 0
-                self.stop_time = val.stop_time
             except KeyError:
                 error = open('{}/error.txt'.format(self.res_dir), 'w+')  # file to write error message
                 error.write(f"Error: no name or nonexistent test case name given in args: {kwargs}")
@@ -58,6 +59,7 @@ class XtestingValidate(testcase.TestCase):
         except:
             print(f"Error: {traceback.format_exc()}")
             self.result = 0
+        self.stop_time = time.time()
 
 # main
 if __name__ == "__main__":

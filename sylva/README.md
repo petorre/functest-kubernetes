@@ -70,6 +70,12 @@ If needed, manually delete stack-validation pods with
 kubectl delete -f image/stack-validation/k8s/ns.yaml
 ```
 
+## Clean
+
+```
+./clean.sh
+```
+
 ## Tested on
 
 Currently only validateRT test cases was tested on worker nodes that are EC2 VMs, on servers with Intel Xeon Scalable Processors, using these Kubernetes distributions and Linux:

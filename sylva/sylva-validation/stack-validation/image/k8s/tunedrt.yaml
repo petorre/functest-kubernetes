@@ -1,0 +1,73 @@
+# Copyright (C) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  namespace: stack-validation
+  name: test-tunedrt
+  labels:
+    app.kubernetes.io/name: test-tunedrt
+    app.kubernetes.io/component: test-backend
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: test-tunedrt
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: test-tunedrt
+        app.kubernetes.io/component: backend
+    spec:
+      containers:
+      - name: test-tunedrt
+        image: alpine:3.20
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: varlogtuned
+          mountPath: /var/log/tuned
+          readOnly: true
+        resources:
+          requests:
+            cpu: 10m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 50Mi
+        env:
+        - name: https_proxy
+          #value: "http://yourProxyFQDNOrIP:port"
+        command: [ "sh", "-c" ]
+        # checks /var/log/tuned/tuned.log
+        args:
+        - if [ -e /var/log/tuned/tuned.log ]; then
+            tunedlogstatictuning=` grep "static tuning from profile" /var/log/tuned/tuned.log | tail -1 `;
+            tunedlogrealtime=` echo ${tunedlogstatictuning} | grep -c realtime `;
+            if [ "${tunedlogrealtime}" -gt 0 ]; then
+              echo "tunedlogrealtime=1";
+            else
+              echo "tunedlogrealtime=0";
+            fi;
+          else
+            echo "tunedlogrealtime=-1";
+          fi;
+          echo "tunedlogstatictuning=${tunedlogstatictuning}";
+          sleep infinity;
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65432
+          runAsGroup: 65432
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+          readOnlyRootFilesystem: true
+      volumes:
+      - name: varlogtuned
+        hostPath:
+          path: /var/log/tuned
+          type: Directory
