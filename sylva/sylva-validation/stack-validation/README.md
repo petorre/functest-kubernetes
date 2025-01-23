@@ -413,22 +413,41 @@ Put as much as possible into Alpine-based image with securityContext allowing on
 
 Test cases can be split into these categories depending on what are they based on:
 
-.. list-table:: Test cases on Linux and Kubernetes
-    :widths: 30 50 20
-    :header-rows: 1
+.. list-table:: Characteristics of infrastructure nodes
+   :widths: 20 20 5 5 5 5 5 5 5 5 5 5 5 5 
+   :header-rows: 1
 
-    * - Category
-      - Test cases short names
-      - Comment
-    * - Must be based on Linux and doesn’t work over k8s
-      - TSN
-      - No PTP HW Clock info on virtual interface or VF
-    * - Fully based on Linux and just scheduled over k8s
-      - SMT, PhysicalStorage, LinuxDistribution, LinuxKernelVersion, RT
-      -
-    * - Partly based on Linux and partly on k8s
-      - Hugepages
-      - Configured on Linux, allocatable in k8s
-    * - Based on k8s
-      - StorageQuantity, VcpuQuantity, NFD, SystemResourceReservation, CPUPinning, KubernetesAPIs, AnuketProfileLabels, SecurityGroups
-      -
+   * - Node type
+     - Identity
+     - Image
+     - Placement
+     - Compute
+     - Networking
+     - Message Queue
+     - DB Server
+     - Ephemeral
+     - Persistent Block
+     - Persistent Object
+     - Management
+     - Underlay (Provider)
+     - Overlay
+
+.. list-table:: Test cases on Linux and Kubernetes
+   :widths: 30 50 20
+   :header-rows: 1
+
+   * - Category
+     - Test cases short names
+     - Comment
+   * - Must be based on Linux and doesn’t work over k8s
+     - TSN
+     - No PTP HW Clock info on virtual interface or VF
+   * - Fully based on Linux and just scheduled over k8s
+     - SMT, PhysicalStorage, LinuxDistribution, LinuxKernelVersion, RT
+     - 
+   * - Partly based on Linux and partly on k8s
+     - Hugepages
+     - Configured on Linux, allocatable in k8s
+   * - Based on k8s
+     - StorageQuantity, VcpuQuantity, NFD, SystemResourceReservation, CPUPinning, KubernetesAPIs, AnuketProfileLabels, SecurityGroups
+     - 
