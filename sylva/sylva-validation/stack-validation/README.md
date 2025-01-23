@@ -413,116 +413,42 @@ Put as much as possible into Alpine-based image with securityContext allowing on
 
 Test cases can be split into these categories depending on what are they based on:
 
-.. list-table:: Characteristics of infrastructure nodes
-   :widths: 20 20 5 5 5 5 5 5 5 5 5 5 5 5 
-   :header-rows: 1
++---------------------------+-----------------------------------------+----------------------+
+| Category                  | Test cases short names                  | Comment              |
++===========================+=========================================+======================+
+| Must be based on Linux    | TSN                                     | Info shown only in   |
+|                           |                                         | phyisical interfaces |                   |
++---------------------------+-----------------------------------------+----------------------+
+| Fully based on Linux and  | SMT, PhysicalStorage, LinuxDistribution |                      |
+| just scheduled over k8s   | LinuxKernelVersion, RT                  |                      |
++---------------------------+-----------------------------------------+----------------------+
+| Partly based on Linux and | Hugepages                               | Configured on        |
+| partly on k8s             |                                         | Linux, allocatable   |
+|                           |                                         | in k8s               |
++---------------------------+-----------------------------------------+----------------------+
+| Based on k8s              | StorageQuantity, VcpuQuantity, NFD,     |                      |
+|                           | SystemResourceReservation, CPUPinning,  |                      |
+|                           | KubernetesAPIs, AnuketProfileLabels,    |                      |
+|                           | SecurityGroups                          |                      |
++---------------------------+-----------------------------------------+----------------------+
 
-   * - Node type
-     - Identity
-     - Image
-     - Placement
-     - Compute
-     - Networking
-     - Message Queue
-     - DB Server
-     - Ephemeral
-     - Persistent Block
-     - Persistent Object
-     - Management
-     - Underlay (Provider)
-     - Overlay
-
-.. list-table:: Profile extensions
-   :widths: 25 15 35 25
-   :header-rows: 1
-
-   * - Component
-     - Set/Observe
-     - Capability
-     - Example
-   * - Cloud infrastructure management software
-     - Set
-     - Target software/firmware version
-     - Software: v1.2.1
-   * - 
-     - 
-     - Desired configuration attribute
-     - dhcp_lease_time: 86400
-   * - 
-     - 
-     - Desired component quantities
-     - # hypervisor hosts: 10
-   * - 
-     - Observe
-     - Observed software/firmware version
-     - Software: v1.2.1
-   * - 
-     - 
-     - Observed configuration attribute
-     - dhcp_lease_time: 86400
-   * - 
-     - 
-     - Observed component quantities
-     - # hypervisor hosts: 10
-   * - Cloud infrastructure software
-     - Set
-     - Target software version
-     - Hypervisor software: v3.4.1
-   * - 
-     - 
-     - Desired configuration attribute
-     - management_int: eth0
-   * - 
-     - 
-     - Desired component quantities
-     - # NICs for data: 6
-   * - 
-     - Observe
-     - Observed software/firmware version
-     - Hypervisor software: v3.4.1
-   * - 
-     - 
-     - Observed configuration attribute
-     - management_int: eth0
-   * - 
-     - 
-     - Observed component quantities
-     - # NICs for data: 6
-   * - Infrastructure hardware
-     - Set
-     - Target software/firmware version
-     - Storage controller firmware: v10.3.4
-   * - 
-     - 
-     - Desired configuration attribute
-     - Virtual disk 1: RAID1 [HDD1,HDD2]
-   * - 
-     - Observe
-     - Observed software/firmware version
-     - Storage controller firmware: v10.3.4
-   * - 
-     - 
-     - Observed configuration attribute
-     - Virtual disk 1: RAID1 [HDD1,HDD2]
-
-**Table 9-2:** Configuration and lifecycle management capabilities
-
-.. list-table:: Test cases on Linux and Kubernetes
-   :widths: 30 50 20
-   :header-rows: 1
-
-   * - Category
-     - Test cases short names
-     - Comment
-   * - Must be based on Linux and doesn’t work over k8s
-     - TSN
-     - No PTP HW Clock info on virtual interface or VF
-   * - Fully based on Linux and just scheduled over k8s
-     - SMT, PhysicalStorage, LinuxDistribution, LinuxKernelVersion, RT
-     - 
-   * - Partly based on Linux and partly on k8s
-     - Hugepages
-     - Configured on Linux, allocatable in k8s
-   * - Based on k8s
-     - StorageQuantity, VcpuQuantity, NFD, SystemResourceReservation, CPUPinning, KubernetesAPIs, AnuketProfileLabels, SecurityGroups
-     - 
++---------------------------+---------------------------------+----------------------+
+| Category                  | Test cases short names          | Comment              |
++===========================+=================================+======================+
+| Must be based on Linux    | TSN                             | Info shown only in   |
+|                           |                                 | phyisical interfaces |                   |
++---------------------------+---------------------------------+----------------------+
+| Fully based on Linux and  | SMT, PhysicalStorage,           |                      |
+| just scheduled over k8s   | LinuxDistribution,              |                      |
+|                           | LinuxKernelVersion, RT          |                      |
++---------------------------+---------------------------------+----------------------+
+| Partly based on Linux and | Hugepages                       | Configured on        |
+| partly on k8s             |                                 | Linux, allocatable   |
+|                           |                                 | in k8s               |
++---------------------------+---------------------------------+----------------------+
+| Based on k8s              | StorageQuantity, VcpuQuantity,  |                      |
+|                           | NFD, SystemResourceReservation, |                      |
+|                           | CPUPinning, KubernetesAPIs,     |                      |
+|                           | AnuketProfileLabels,            |                      |
+|                           | SecurityGroups                  |                      |
++---------------------------+---------------------------------+----------------------+
