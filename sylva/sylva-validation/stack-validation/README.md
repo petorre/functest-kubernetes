@@ -404,3 +404,7 @@ Various test cases were tested on worker nodes that are bare metal or in VMs, on
 Currently only the following validate.sh tests work: validateSMT, validateStorageQuantity, validateVcpuQuantity, validateNFD, validateKubernetesAPIs, validateLinuxKernelVersion, validateAnuketProfileLabels.
 
 Other test cases require pods of which current images (using IPC_LOCK or hostPID) are not supported with default OpenShift pod security settings.
+
+## Design principle for Daemonsets
+
+Put as much as possible into Alpine-based image with securityContext allowing only minimum. Create other where that is not possible: mounting huge pages or files, hostPID, other Linux image...

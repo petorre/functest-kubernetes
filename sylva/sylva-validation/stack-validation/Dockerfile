@@ -1,7 +1,7 @@
 # Copyright (C) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-FROM alpine:3.20
+FROM alpine:3.21
 
 ENV DIR=/stack-validation
 COPY image/ "${DIR}"

@@ -456,16 +456,18 @@ function validateSMT {
             echo "false,"
             echo "            \"error\": \"Didn't find running test pod.\""
         else
-            phcpus=$( kubectl exec -t -n "${NS}" "${p}" -- cat /proc/cpuinfo \
-                | grep "^physical id" /proc/cpuinfo | sort -u | wc -l || true )
-            phcores=$( kubectl exec -t -n "${NS}" "${p}" -- cat /proc/cpuinfo \
-                | grep "^core id" | sort -u | wc -l || true )  # per phcpu
-            vcpus=$( kubectl exec -t -n "${NS}" "${p}" -- cat /proc/cpuinfo | \
-                grep -c "^processor" || true )
-            if [[ "$(( phcores * phcpus * 2 ))" -eq "${vcpus}" ]]; then
-                echo -n "true"
-            else
+            log=$( kubectl logs -n "${NS}" "${p}" )
+            phcpus=$( echo "${log}" | awk -v FS="=" ' $1=="phcpus" { print $2 } ' )
+            phcores=$( echo "${log}" | awk -v FS="=" ' $1=="phcores" { print $2 } ' )
+            vcpus=$( echo "${log}" | awk -v FS="=" ' $1=="vcpus" { print $2 } ' )
+            if [[ ${phcpus} -lt 1 ]] || [[ ${phcores} -lt 1 ]] || [[ ${vcpus} -lt 1 ]]; then
                 echo -n "false"
+            else
+                if [[ "$(( phcores * phcpus * 2 ))" -eq "${vcpus}" ]]; then
+                    echo -n "true"
+                else
+                    echo -n "false"
+                fi
             fi
             if [[ "${DEBUG}" == "true" ]]; then
                 echo ","

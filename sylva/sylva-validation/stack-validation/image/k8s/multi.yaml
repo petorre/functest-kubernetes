@@ -38,8 +38,13 @@ spec:
         command: [ "sh", "-c" ]
         # awk pci.ids is to avoid apk add pciutils and keep runAsNonRoot
         args:
-        - cpuinfocpus=` cat /proc/cpuinfo | grep -c ^processor `;
-          allrange=` echo "0-"\` expr $cpuinfocpus - 1 \` `;
+        - phcpus=$( cat /proc/cpuinfo | grep "^physical id" /proc/cpuinfo | sort -u |   wc -l || true );
+          phcores=$( cat /proc/cpuinfo | grep "^core id" | sort -u | wc -l || true );
+          vcpus=$( cat /proc/cpuinfo | grep -c "^processor" || true);
+          echo "phcpus=${phcpus}";
+          echo "phcores=${phcores}";
+          echo "vcpus=${vcpus}";
+          allrange=` echo "0-"\` expr $vcpus - 1 \` `;
           if [ -e /sys/fs/cgroup/cpuset/cpuset.cpus ]; then
             cpusetcpus=` cat /sys/fs/cgroup/cpuset/cpuset.cpus `;
           else
@@ -54,7 +59,7 @@ spec:
           echo "cpusetcpus=${cpusetcpus}";
           echo "cpusetlimited=${cpusetlimited}";
           echo "Next trying to wget pci.ids";
-          pciids=$( wget --timeout=20 -qO - https://pciids.sourceforge.net/v2.2/pci.ids );
+          pciids=$( wget --timeout=20 -qO - https://pci-ids.ucw.cz/v2.2/pci.ids );
           for pcidev in $( awk ' { print $2 } ' < /proc/bus/pci/devices ); do
             venid="${pcidev:0:4}";
             devid="${pcidev:4:4}";
