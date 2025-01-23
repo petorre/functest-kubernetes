@@ -432,6 +432,81 @@ Test cases can be split into these categories depending on what are they based o
      - Underlay (Provider)
      - Overlay
 
+.. list-table:: Profile extensions
+   :widths: 25 15 35 25
+   :header-rows: 1
+
+   * - Component
+     - Set/Observe
+     - Capability
+     - Example
+   * - Cloud infrastructure management software
+     - Set
+     - Target software/firmware version
+     - Software: v1.2.1
+   * - 
+     - 
+     - Desired configuration attribute
+     - dhcp_lease_time: 86400
+   * - 
+     - 
+     - Desired component quantities
+     - # hypervisor hosts: 10
+   * - 
+     - Observe
+     - Observed software/firmware version
+     - Software: v1.2.1
+   * - 
+     - 
+     - Observed configuration attribute
+     - dhcp_lease_time: 86400
+   * - 
+     - 
+     - Observed component quantities
+     - # hypervisor hosts: 10
+   * - Cloud infrastructure software
+     - Set
+     - Target software version
+     - Hypervisor software: v3.4.1
+   * - 
+     - 
+     - Desired configuration attribute
+     - management_int: eth0
+   * - 
+     - 
+     - Desired component quantities
+     - # NICs for data: 6
+   * - 
+     - Observe
+     - Observed software/firmware version
+     - Hypervisor software: v3.4.1
+   * - 
+     - 
+     - Observed configuration attribute
+     - management_int: eth0
+   * - 
+     - 
+     - Observed component quantities
+     - # NICs for data: 6
+   * - Infrastructure hardware
+     - Set
+     - Target software/firmware version
+     - Storage controller firmware: v10.3.4
+   * - 
+     - 
+     - Desired configuration attribute
+     - Virtual disk 1: RAID1 [HDD1,HDD2]
+   * - 
+     - Observe
+     - Observed software/firmware version
+     - Storage controller firmware: v10.3.4
+   * - 
+     - 
+     - Observed configuration attribute
+     - Virtual disk 1: RAID1 [HDD1,HDD2]
+
+**Table 9-2:** Configuration and lifecycle management capabilities
+
 .. list-table:: Test cases on Linux and Kubernetes
    :widths: 30 50 20
    :header-rows: 1
