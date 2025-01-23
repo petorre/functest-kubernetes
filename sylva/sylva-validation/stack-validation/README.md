@@ -413,42 +413,9 @@ Put as much as possible into Alpine-based image with securityContext allowing on
 
 Test cases can be split into these categories depending on what are they based on:
 
-+---------------------------+-----------------------------------------+----------------------+
-| Category                  | Test cases short names                  | Comment              |
-+===========================+=========================================+======================+
-| Must be based on Linux    | TSN                                     | Info shown only in   |
-|                           |                                         | phyisical interfaces |                   |
-+---------------------------+-----------------------------------------+----------------------+
-| Fully based on Linux and  | SMT, PhysicalStorage, LinuxDistribution |                      |
-| just scheduled over k8s   | LinuxKernelVersion, RT                  |                      |
-+---------------------------+-----------------------------------------+----------------------+
-| Partly based on Linux and | Hugepages                               | Configured on        |
-| partly on k8s             |                                         | Linux, allocatable   |
-|                           |                                         | in k8s               |
-+---------------------------+-----------------------------------------+----------------------+
-| Based on k8s              | StorageQuantity, VcpuQuantity, NFD,     |                      |
-|                           | SystemResourceReservation, CPUPinning,  |                      |
-|                           | KubernetesAPIs, AnuketProfileLabels,    |                      |
-|                           | SecurityGroups                          |                      |
-+---------------------------+-----------------------------------------+----------------------+
-
-+---------------------------+---------------------------------+----------------------+
-| Category                  | Test cases short names          | Comment              |
-+===========================+=================================+======================+
-| Must be based on Linux    | TSN                             | Info shown only in   |
-|                           |                                 | phyisical interfaces |                   |
-+---------------------------+---------------------------------+----------------------+
-| Fully based on Linux and  | SMT, PhysicalStorage,           |                      |
-| just scheduled over k8s   | LinuxDistribution,              |                      |
-|                           | LinuxKernelVersion, RT          |                      |
-+---------------------------+---------------------------------+----------------------+
-| Partly based on Linux and | Hugepages                       | Configured on        |
-| partly on k8s             |                                 | Linux, allocatable   |
-|                           |                                 | in k8s               |
-+---------------------------+---------------------------------+----------------------+
-| Based on k8s              | StorageQuantity, VcpuQuantity,  |                      |
-|                           | NFD, SystemResourceReservation, |                      |
-|                           | CPUPinning, KubernetesAPIs,     |                      |
-|                           | AnuketProfileLabels,            |                      |
-|                           | SecurityGroups                  |                      |
-+---------------------------+---------------------------------+----------------------+
+| Category                           | Test cases short names                                                 | Comment                             |
+|------------------------------------|-----------------------------------------------------------------------|-------------------------------------|
+| Must be based on Linux             | TSN                                                                   | Info shown only in physical interfaces |
+| Fully based on Linux and just scheduled over k8s | SMT, PhysicalStorage, LinuxDistribution, LinuxKernelVersion, RT       |                                     |
+| Partly based on Linux and partly on k8s | Hugepages                                                             | Configured on Linux, allocatable in k8s |
+| Based on k8s                       | StorageQuantity, VcpuQuantity, NFD, SystemResourceReservation, CPUPinning, KubernetesAPIs, AnuketProfileLabels, SecurityGroups |                                     |
