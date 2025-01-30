@@ -189,7 +189,7 @@ class Validate:
         res_kernelrt = False
         res_tunedrt = False
         for n in self.NODES:
-            if self.node != None and self.node != n:  # if single node to test is set, then skip other nodes
+            if self.node != None and self.node != n:  # if single node to test is set, and this is not the right node, then skip other nodes
                 continue
             cwn = {"name": f"{n}"}
             tcjn["nodes"].append(cwn)  # current worker node
@@ -197,7 +197,9 @@ class Validate:
             node_with_multi_pod = False  # for kernelrt
             node_with_tunedrt_pod = False
             for p in pods.items:
-                if p.metadata.namespace == self.NS and p.metadata.name.startswith(f"test-{self.CPUPOWER}-"):
+                if not p.metadata.namespace == self.NS or not p.spec.nodeName == n or not p.status.phase == "Running":  # skip if pod is not from the right namespace, on that node, and Running
+                    continue
+                if p.metadata.name.startswith(f"test-{self.CPUPOWER}-"):
                     node_with_cpupower_pod = True
                     log = self.v1.read_namespaced_pod_log(namespace=self.NS, name=p.metadata.name)
                     shf = False  # cpupower frequency-info | grep "CPUs which run at the same hardware frequency"
@@ -210,7 +212,7 @@ class Validate:
                                 shf = True
                             debug_cpupower = l
                     res_cpupower = shf
-                if p.metadata.namespace == self.NS and p.metadata.name.startswith(f"test-{self.MULTI}-"):
+                if p.metadata.name.startswith(f"test-{self.MULTI}-"):
                     node_with_multi_pod = True
                     log = self.v1.read_namespaced_pod_log(namespace=self.NS, name=p.metadata.name)
                     knr = False  # kernel with -rt, -realtime
@@ -240,7 +242,7 @@ class Validate:
                                             pcr = True
                             debug_kernelrt += "; " + l
                     res_kernelrt = knr and per and skr and pcr
-                if p.metadata.namespace == self.NS and p.metadata.name.startswith(f"test-{self.TUNEDRT}-") and p.status.phase == "Running":
+                if p.metadata.name.startswith(f"test-{self.TUNEDRT}-"):
                     node_with_tunedrt_pod = True
                     log = self.v1.read_namespaced_pod_log(namespace=self.NS, name=p.metadata.name)
                     trt = False  # grep "static tuning from profile" /var/log/tuned/tuned.log | tail -1 | grep -c realtime
