@@ -18,3 +18,5 @@ functest-kubernetes.egg-info
 *.egg-info
 *.out
 *.pdf
+/sylva/build/image/xtesting/etc/kubeconfig
+__pycache__/
