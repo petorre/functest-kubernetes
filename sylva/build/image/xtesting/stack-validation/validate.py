@@ -19,6 +19,7 @@ import json
 import sys
 import time
 import logging
+import re
 from kubernetes import client, config, utils  # pip install kubernetes
 from kubernetes.client.rest import ApiException
 from requests.exceptions import RequestException
@@ -483,8 +484,9 @@ with kubectl delete ns {self.ns})."
             d = ""
             for t in types:
                 tn = t["name"]
-                a = int(self.v1.read_node(n).status.allocatable.get(
-                    f"hugepages-{tn}"))
+                a = int(re.sub(r'[^\d]', '',
+                    self.v1.read_node(n).status.allocatable.get(
+                    f"hugepages-{tn}")))
                 alloc[f"{tn}"] = a
                 s += a
                 if d != "":
@@ -500,11 +502,10 @@ with kubectl delete ns {self.ns})."
                             )):
                         log = self.v1.read_namespaced_pod_log(
                             namespace=self.ns, name=p.metadata.name)
-                        res = False
-                        hugepages = None
-                        nr_hugepages = None
-                        meminfo_hugepages_free = None
-                        mount_dev_hugepages = None
+                        hugepages = 0
+                        nr_hugepages = 0
+                        meminfo_hugepages_free = 0
+                        mount_dev_hugepages = 0
                         for log_line in log.split("\n"):
                             if log_line.startswith("hugepages="):
                                 hugepages = int(log_line.split("=")[1])
@@ -518,7 +519,7 @@ with kubectl delete ns {self.ns})."
                                     log_line.split("=")[1])
                             if hugepages > 0:
                                 res = True
-                            d += f", nr_hugepages={nr_hugepages}, \
+                        d += f", nr_hugepages={nr_hugepages}, \
 meminfo_hugepages_free={meminfo_hugepages_free}, \
 mount_dev_hugepages={mount_dev_hugepages}"
             cwn["result"] = str(res).lower()

@@ -61,6 +61,8 @@ and later only:
 ansible-playbook site.yml
 ```
 
+Next following section [Play](https://github.com/opnfv/functest-xtesting/blob/master/README.md#play) select "validate" job, click "Build with Parameters", observe how it completes, on the last completed step click on "Console" logo to see if "RESULT" is "SUCCESS" or "FAIL", and link with results.json to see details per test case.
+
 ### (Optional) CLI without Jenkins
 
 Without previous virtual environment:
@@ -71,9 +73,105 @@ cd build/image/xtesting/stack-validation
 python xtvalidate.py
 ```
 
-## Example run
+An example is in:
 
-Follow section [Play](https://github.com/opnfv/functest-xtesting/blob/master/README.md#play)
+```
+# python validate.py --debug
+{
+  "stackValidation": {
+    "testCases": [
+      {
+        "name": "validateAnuketProfileLabels",
+        "description": "Validate Anuket profile labels",
+        "ra2Spec": "ra2.k8s.011",
+        "nodes": [
+          {
+            "name": "node01",
+            "result": "true",
+            "debug": "anuket.io/profile=network-intensive"
+          }
+        ]
+      },
+      {
+        "name": "validateLinuxDistribution",
+        "description": "Validate Linux distribution for deb/rpm",
+        "ra2Spec": "ra2.os.001",
+        "nodes": [
+          {
+            "name": "node01",
+            "result": "true",
+            "debug": "linux=Ubuntu 22.04.2 LTS"
+          }
+        ]
+      },
+      {
+        "name": "validateKubernetesAPIs",
+        "description": "Validate k8s APIs without alpha+beta or is exception",
+        "ra2Spec": "ra2.k8s.012",
+        "nodes": [
+          {
+            "name": "node01",
+            "result": "true",
+            "debug": "exception=flowcontrol.apiserver.k8s.io/v1beta3"
+          }
+        ]
+      },
+      {
+        "name": "validateLinuxKernelVersion",
+        "description": "Validate Linux kernel version",
+        "ra2Spec": "ra2.os.002",
+        "nodes": [
+          {
+            "name": "node01",
+            "result": "true",
+            "debug": "kernel=5.15.0-1052-realtime"
+          }
+        ]
+      },
+      {
+        "name": "validateSMT",
+        "description": "Validate SMT",
+        "ra2Spec": "ra2.ch.004",
+        "nodes": [
+          {
+            "name": "node01",
+            "result": "true",
+            "debug": "vcpus=128, threadspercore=2, corespersocket=32, sockets=2"
+          }
+        ]
+      },
+      {
+        "name": "validateHugepages",
+        "description": "Validate huge pages",
+        "ra2Spec": "ra2.ch.001",
+        "nodes": [
+          {
+            "name": "node01",
+            "result": "true",
+            "debug": "alloc_2Mi=0, alloc_1Gi=80, nr_hugepages=80, meminfo_hugepages_free=80, mount_dev_hugepages=1, nr_hugepages=0, meminfo_hugepages_free=0, mount_dev_hugepages=0"
+          }
+        ]
+      },
+      {
+        "name": "validateRT",
+        "description": "Validate Real-Time versions and/or configurations in BIOS, kernel and OS services",
+        "ra2Spec": "ra2.ch.026",
+        "nodes": [
+          {
+            "name": "node01",
+            "debug": "cpussamehwfreq=64; unamerv=5.15.0-1052-realtime #58-Ubuntu SMP PREEMPT_RT Wed Nov 15 20:57:45 UTC 2023; syskernelrealtime=1; proccmdline=BOOT_IMAGE=/vmlinuz-5.15.0-1052-realtime root=/dev/mapper/ubuntu--vg-ubuntu--lv ro intel_iommu=on iommu=pt usbcore.autosuspend=-1 selinux=0 enforcing=0 nmi_watchdog=0 crashkernel=auto softlockup_panic=0 audit=0 intel_pstate=disable mce=off hugepagesz=1G hugepages=80 hugepagesz=2M hugepages=0 default_hugepagesz=1G kthread_cpus=0-4,64-68,32-36,96-100 irqaffinity=0-4,64-68,32-36,96-100 nohz=on skew_tick=1 skew_tick=1 isolcpus=managed_irq,domain,5-31,37-63,69-95,101-127 nohz_full=5-31,37-63,69-95,101-127 rcu_nocbs=5-31,37-63,69-95,101-127 rcu_nocb_poll intel_pstate=disable nosoftlockup tsc=nowatchdog nohz=on; tunedlogstatictuning=2025-02-22 07:42:55,706 INFO     tuned.daemon.daemon: static tuning from profile 'realtime' applied",
+            "result": "true"
+          }
+        ]
+      }
+    ],
+    "timeStamps": {
+      "startTime": "Thu Mar 27 17:36:37 UTC 2025",
+      "stopTime": "Thu Mar 27 17:36:59 UTC 2025"
+    }
+  }
+}
+```
 
 ## Stop
 
@@ -103,6 +201,7 @@ cd build
 
 ## Tested on
 
-Currently only validateLinuxDistribution and validateRT test cases were tested on worker nodes that are EC2 VMs, on servers with 4th Gen Intel Xeon Scalable Processors, using these Kubernetes distributions and Linux:
+All included test cases were tested on servers with 4th Gen Intel Xeon Scalable Processors, using these Kubernetes and Linux distributions:
 
-* k3s v1.31.6+k3s1 on Rocky Linux 9.5 with kernel 5.14
+* k3s v1.31.6+k3s1 on Ubuntu 22.04.2 LTS with kernel 5.15-realtime on premises
+* k3s v1.31.6+k3s1 on Rocky Linux 9.5 with kernel 5.14 on EC2 VM
