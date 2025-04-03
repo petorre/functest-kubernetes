@@ -215,14 +215,9 @@ class Validate:
                 self.create_daemonset(self.reserve, True)
                 self.validate_system_resource_reservation()
         if test == "validateRT":
-            self.create_namespace()
-            if self.check_empty_namespace():
-                #
-                # includes test for all CPUs running on same frequency
-                self.create_daemonset(self.multi, False)
-                #
-                self.create_daemonset(self.tunedrt, True)
-                self.validate_rt()
+            # create NS and multi are already done above
+            self.create_daemonset(self.tunedrt, True)
+            self.validate_rt()
         if test == "validateTSN":
             self.resj["error"] = "Current testcase validateTSN doesn't work \
 with virtual networking."
@@ -293,6 +288,7 @@ with virtual networking."
         r = self.v1.list_pod_for_all_namespaces(watch=False)
         for i in r.items:
             if i.metadata.namespace == self.ns:
+                print(f"i.metadata = {i.metadata}")
                 self.resj["error"] = f"There are pods already running in \
 namespace {self.ns}. Wait after previous test, or manually delete them (like \
 with kubectl delete ns {self.ns})."
