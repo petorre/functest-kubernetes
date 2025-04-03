@@ -76,7 +76,7 @@ cpupower frequency-info 2>> /dev/null | grep \
 if [ -e /var/log/tuned/tuned.log ]; then
     cd /var/log/tuned
     p=$( grep "static tuning from profile" tuned.log | tail -1 )
-    if [ $( echo "${p}" | grep -c "static" ) -gt 0 ]; then
+    if [ $( echo "${p}" | grep -c "realtime" ) -gt 0 ]; then
         echo "tunedlogrealtime=1"
     else
         echo "tunedlogrealtime=0"
