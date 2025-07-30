@@ -1,4 +1,2 @@
 kubernetes
-robotframework
-robotframework-jsonlibrary
 xtesting
