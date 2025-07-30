@@ -24,7 +24,7 @@ spec:
       hostPID: true
       containers:
         - name: test-reserve
-          image: 127.0.0.1:5000/validation
+          image: ptorre/validation
           imagePullPolicy: Always
           resources:
             requests:

@@ -7,9 +7,8 @@
 Python program with class that validates k8s features by using Daemonsets
 in k8s folder.
 
-Usage:
-python validate.py [--debug] [--config=configfilename] [--test=testName]
-    [--node=workernodename]
+For usage do:
+python validate.py --help
 """
 
 import argparse
@@ -77,6 +76,12 @@ class Validate:
         self.show_description = s["show"]["description"]
         self.show_ra2spec = s["show"]["ra2Spec"]
 
+    def natural_sort_key(self, s):
+        """
+        Function to convert strings to a list of alphanumerical chunks for sorting
+        """
+        return [int(text) if text.isdigit() else text.lower() for text in re.split('(\d+)', s)]
+
     # label = test only labeled nodes, or None to test all
     # node = test only one worker node, or None to test all
     def __init__(self, configfile, debug, label, node):
@@ -95,19 +100,25 @@ class Validate:
 
         n = []
         try:
-            for ln in self.v1.list_node().items:
-                nn = ln.metadata.name
-                if label is None and (node is None or node == nn):
-                    n.append(nn)
-                else:
-                    lk = list(label.keys())[0]
-                    lv = list(label.values())[0]
-                    lsk = list(ln.metadata.labels.keys())
-                    lsv = list(ln.metadata.labels.values())
-                    for i in range(len(ln.metadata.labels)):
-                        if lk == lsk[i] and lv == lsv[i] and \
-                                (node is None or node == nn):
+            ns = self.v1.list_node().items
+            if len(ns) == 1:
+                n.append(ns[0].metadata.name)
+            else:
+                for ln in ns:
+                    nn = ln.metadata.name
+                    if label is None and (node is None or node == nn):
+                        if ln.metadata.labels.get('node-role.kubernetes.io/worker') is not None:
                             n.append(nn)
+                    else:
+                        lk = list(label.keys())[0]
+                        lv = list(label.values())[0]
+                        lsk = list(ln.metadata.labels.keys())
+                        lsv = list(ln.metadata.labels.values())
+                        for i in range(len(ln.metadata.labels)):
+                            if lk == lsk[i] and lv == lsv[i] and \
+                                    (node is None or node == nn):
+                                n.append(nn)
+                n.sort(key=self.natural_sort_key)
         except ApiException as e:
             self.resj["error"] = f"Kubernetes API error: {e}"
             self.ready = False
@@ -480,9 +491,12 @@ with kubectl delete ns {self.ns})."
             d = ""
             for t in types:
                 tn = t["name"]
-                a = int(re.sub(r'[^\d]', '',
-                    self.v1.read_node(n).status.allocatable.get(
-                    f"hugepages-{tn}")))
+                alhp = self.v1.read_node(n).status.allocatable.get(
+                    f"hugepages-{tn}")
+                if alhp == None:
+                    a = 0
+                else:
+                    a = int(re.sub(r'[^\d]', '', alhp))
                 alloc[f"{tn}"] = a
                 s += a
                 if d != "":
@@ -681,6 +695,7 @@ mount_dev_hugepages={mount_dev_hugepages}"
             d = ""
             for p in pods.items:
                 if p.metadata.namespace == self.ns and \
+                        p.spec.node_name == n and \
                         p.metadata.name.startswith(f"test-{self.multi}-"):
                     log = self.v1.read_namespaced_pod_log(
                         namespace=self.ns, name=p.metadata.name)

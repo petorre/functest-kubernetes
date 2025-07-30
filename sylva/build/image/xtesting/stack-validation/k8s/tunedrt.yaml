@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: test-tunedrt
-          image: 127.0.0.1:5000/validation
+          image: ptorre/validation
           imagePullPolicy: Always
           volumeMounts:
             - name: varlogtuned
