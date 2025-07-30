@@ -186,9 +186,14 @@ class Validate:
                 self.validate_linux_distribution()
                 self.validate_kubernetes_apis()
                 self.validate_linux_kernel_version()
+                self.validate_vcpu_quantity()
+                self.validate_storage_quantity()
+                self.validate_nfd()
                 self.validate_smt()
                 self.validate_hugepages()
-                # here do all other tests
+                self.validate_system_resource_reservation()
+                self.validate_cpu_pinning()
+                self.validate_physical_storage()
                 self.validate_rt()
         if test in tests_with_multi_daemonset:
             self.create_namespace()
@@ -209,15 +214,18 @@ class Validate:
                 self.create_daemonset(self.huge1gi, True)
                 self.validate_hugepages()
         if test == "validateSMT":
-            self.validate_smt()
+            if self.check_empty_namespace():
+                self.validate_smt()
         if test == "validatePhysicalStorage":
-            self.validate_physical_storage()
+            if self.check_empty_namespace():
+                self.validate_physical_storage()
         if test == "validateStorageQuantity":
             self.validate_storage_quantity()
         if test == "validateVcpuQuantity":
             self.validate_vcpu_quantity()
         if test == "validateCPUPinning":
-            self.validate_cpu_pinning()
+            if self.check_empty_namespace():
+                self.validate_cpu_pinning()
         if test == "validateNFD":
             self.validate_nfd()
         if test == "validateSystemResourceReservation":
@@ -226,9 +234,10 @@ class Validate:
                 self.create_daemonset(self.reserve, True)
                 self.validate_system_resource_reservation()
         if test == "validateRT":
-            # create NS and multi are already done above
-            self.create_daemonset(self.tunedrt, True)
-            self.validate_rt()
+            if self.check_empty_namespace():
+                # multi was already deployed above
+                self.create_daemonset(self.tunedrt, True)
+                self.validate_rt()
         if test == "validateTSN":
             self.resj["error"] = "Current testcase validateTSN doesn't work \
 with virtual networking."
@@ -299,10 +308,9 @@ with virtual networking."
         r = self.v1.list_pod_for_all_namespaces(watch=False)
         for i in r.items:
             if i.metadata.namespace == self.ns:
-                print(f"i.metadata = {i.metadata}")
                 self.resj["error"] = f"There are pods already running in \
 namespace {self.ns}. Wait after previous test, or manually delete them (like \
-with kubectl delete ns {self.ns})."
+with python validate.py --delete-ns or kubectl delete ns {self.ns})."
                 return False
         return True
 
@@ -342,7 +350,8 @@ with kubectl delete ns {self.ns})."
             tcjn["description"] = description
         if self.show_ra2spec:
             tcjn["ra2Spec"] = ra2spec
-        tcjn["nodes"] = []
+        if name != "validateKubernetesAPIs":  # is the only one on cluster-level
+            tcjn["nodes"] = []
         return tcjn
 
     def validate_anuket_profile_labels(self):
@@ -414,9 +423,6 @@ with kubectl delete ns {self.ns})."
         for tc in self.d["testCases"]:
             if tc["name"] == "validateKubernetesAPIs":
                 exceptions = tc["exceptions"]
-        for n in self.nodes:
-            cwn = {"name": f"{n}"}
-            tcjn["nodes"].append(cwn)  # current worker node
         api_resources = client.ApisApi(self.cl).get_api_versions()
         res = True
         d = ""
@@ -433,9 +439,9 @@ with kubectl delete ns {self.ns})."
                     d += v.group_version
                     if not in_exceptions:
                         res = False
-        cwn["result"] = str(res).lower()
+        tcjn["result"] = str(res).lower()
         if self.debug:
-            cwn["debug"] = d
+            tcjn["debug"] = d
 
     def validate_linux_kernel_version(self):
         """
@@ -504,7 +510,8 @@ with kubectl delete ns {self.ns})."
                 d += f"alloc_{tn}={a}"
             if s > 0:
                 for p in pods.items:
-                    if (p.metadata.namespace == self.ns and (
+                    if (p.metadata.namespace == self.ns and \
+                            p.spec.node_name == n and (
                             p.metadata.name.startswith(
                                 f"test-{self.huge2mi}-") or
                             p.metadata.name.startswith(
@@ -551,6 +558,7 @@ mount_dev_hugepages={mount_dev_hugepages}"
             d = ""
             for p in pods.items:
                 if p.metadata.namespace == self.ns and \
+                        p.spec.node_name == n and \
                         p.metadata.name.startswith(f"test-{self.multi}-"):
                     log = self.v1.read_namespaced_pod_log(
                         namespace=self.ns, name=p.metadata.name)
@@ -602,6 +610,7 @@ mount_dev_hugepages={mount_dev_hugepages}"
             d = ""
             for p in pods.items:
                 if p.metadata.namespace == self.ns and \
+                        p.spec.node_name == n and \
                         p.metadata.name.startswith(f"test-{self.multi}-"):
                     log = self.v1.read_namespaced_pod_log(
                         namespace=self.ns, name=p.metadata.name)
@@ -763,6 +772,7 @@ mount_dev_hugepages={mount_dev_hugepages}"
             d = "not found"
             for p in pods.items:
                 if p.metadata.namespace == self.ns and \
+                        p.spec.node_name == n and \
                         p.metadata.name.startswith(f"test-{self.reserve}-"):
                     log = self.v1.read_namespaced_pod_log(
                         namespace=self.ns, name=p.metadata.name)
@@ -812,6 +822,7 @@ mount_dev_hugepages={mount_dev_hugepages}"
             debug_tunedrt = ""
             for p in pods.items:
                 if p.metadata.namespace == self.ns and \
+                        p.spec.node_name == n and \
                         p.metadata.name.startswith(f"test-{self.multi}-"):
                     node_with_multi_pod = True
                     log = self.v1.read_namespaced_pod_log(
@@ -859,6 +870,7 @@ mount_dev_hugepages={mount_dev_hugepages}"
                             debug_kernelrt += "; " + log_line
                     res_kernelrt = knr and per and skr and pcr
                 if p.metadata.namespace == self.ns and \
+                        p.spec.node_name == n and \
                         p.metadata.name.startswith(
                             f"test-{self.tunedrt}-") and \
                         p.status.phase == "Running":
