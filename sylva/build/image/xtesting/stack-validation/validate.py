@@ -998,10 +998,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config", dest="config_filename", help="Config file name")
     parser.add_argument("--test", dest="test", help="Test case name")
-    parser.add_argument("--label", dest="label", help="Node label like kubernetes.io/os or kubernetes.io/os=linux, ignores node-role.kubernetes.io/worker label")
-    parser.add_argument("--node", dest="node", help="Node name, ignores --label")
+    parser.add_argument("--label", dest="label", help="Node label like kubernetes.io/os or kubernetes.io/os=linux, then ignores node-role.kubernetes.io/worker label")
+    parser.add_argument("--node", dest="node", help="Node name, then ignores --label")
     parser.add_argument(
-        "--delete-ns", dest="delete", help="Delete NS", action="store_true")
+        "--delete-ns", dest="delete", help="Delete namespace", action="store_true")
     args = parser.parse_args(sys.argv[1:])
     if isinstance(args, argparse.Namespace):
         if args.debug:
