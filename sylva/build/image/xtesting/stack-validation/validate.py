@@ -124,7 +124,7 @@ class Validate:
             if label is None:
                 for tn in ns:
                     if tn.metadata.labels.get('node-role.kubernetes.io/worker') is not None:
-                        n.append(ln.metadata.name)
+                        n.append(tn.metadata.name)
                 if len(n) > 0:
                     self.nodes = n
                     self.ready = True
