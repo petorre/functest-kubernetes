@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: test-multi
-          image: ptorre/validation
+          image: localhost:5000/validation
           imagePullPolicy: Always
           resources:
             requests:

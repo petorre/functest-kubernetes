@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: test-huge2mi
-          image: ptorre/validation
+          image: localhost:5000/validation
           imagePullPolicy: Always
           resources:
             requests:

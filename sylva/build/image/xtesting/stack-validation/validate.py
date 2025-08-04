@@ -1017,8 +1017,10 @@ if __name__ == "__main__":
     val = Validate(cf, debug_flag, label_flag, node_flag)
     if args.delete:
         val.delete_namespace()
+        logging.basicConfig(level = logging.INFO, stream = sys.stdout,
+            format='%(message)s')
         logger = logging.getLogger(__name__)
         logger.info("Deleted namespace %s", val.ns)
     else:
         val.run(test_flag)
-    print(json.dumps(val.endresj, indent=2))
+        print(json.dumps(val.endresj, indent=2))
