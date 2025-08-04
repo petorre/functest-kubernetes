@@ -101,29 +101,60 @@ class Validate:
         n = []
         try:
             ns = self.v1.list_node().items
-            if len(ns) == 1:
+            if node is not None:
+                # ignores --label
+                found = False
+                for tn in ns:
+                    if node == tn.metadata.name:
+                        found = True
+                        n.append(tn.metadata.name)
+                if found:
+                    self.nodes = n
+                    self.ready = True
+                    return
+                else:
+                    self.resj["error"] = f"Cannot find node with name {node}"
+                    self.ready = False
+                    return
+            if label is None and len(ns) == 1:  # will work on 1-node k3s that doesn't have worker label
                 n.append(ns[0].metadata.name)
-            else:
-                for ln in ns:
-                    nn = ln.metadata.name
-                    if label is None and (node is None or node == nn):
-                        if ln.metadata.labels.get('node-role.kubernetes.io/worker') is not None:
-                            n.append(nn)
-                    else:
-                        lk = list(label.keys())[0]
-                        lv = list(label.values())[0]
-                        lsk = list(ln.metadata.labels.keys())
-                        lsv = list(ln.metadata.labels.values())
-                        for i in range(len(ln.metadata.labels)):
-                            if lk == lsk[i] and lv == lsv[i] and \
-                                    (node is None or node == nn):
-                                n.append(nn)
-                n.sort(key=self.natural_sort_key)
+                self.nodes = n
+                self.ready = True
+                return
+            if label is None:
+                for tn in ns:
+                    if ln.metadata.labels.get('node-role.kubernetes.io/worker') is not None:
+                        n.append(ln.metadata.name)
+                if len(n) > 0:
+                    self.nodes = n
+                    self.ready = True
+                    return
+            for ln in ns:
+                lkv = label.split("=")
+                if len(lkv) >= 1:
+                    lk = label.split("=")[0]
+                    lv = None
+                if len(lkv) == 2:
+                    lv = label.split("=")[1]
+                if len(lkv) >= 3:
+                    self.resj["error"] = f"Invalid label format {label}"
+                    self.ready = False
+                    return
+                lsk = list(ln.metadata.labels.keys())
+                if lv is not None:
+                    lsv = list(ln.metadata.labels.values())
+                for i in range(len(ln.metadata.labels)):
+                    if lk == lsk[i]:
+                        if lv is None:
+                            n.append(ln.metadata.name)
+                        elif lv == lsv[i]:
+                            n.append(ln.metadata.name)
+            n.sort(key=self.natural_sort_key)
         except ApiException as e:
             self.resj["error"] = f"Kubernetes API error: {e}"
             self.ready = False
             return
-
+        
         if len(n) > 0:
             self.nodes = n
             self.ready = True
@@ -143,8 +174,6 @@ class Validate:
         Arguments:
             test = run only that one test case, or None to run all
         """
-        if not self.ready:
-            return
         start_time = time.time()
         if test == "validateAll":
             test = None
@@ -172,8 +201,16 @@ class Validate:
         unimplemented_tests = {
             "validateSecurityGroups",
         }
-        if test is None or test in implemented_tests:
-            self.resj["testCases"] = []
+        if test in unimplemented_tests:
+            self.resj["error"] = f"Testcase {test} not implemented."
+            return
+        if test is not None and test not in implemented_tests:
+            self.resj["error"] = f"Cannot find testcase {test}."
+            return
+        if not self.ready:
+            return
+
+        self.resj["testCases"] = []
         if test is None:
             self.create_namespace()
             if self.check_empty_namespace():
@@ -247,11 +284,6 @@ with virtual networking."
                 test == "validateSystemResourceReservation" or \
                 test == "validateHugepages":
             self.delete_namespace()
-        if test in unimplemented_tests:
-            self.resj["error"] = f"Testcase {test} not implemented."
-        if test is not None and test not in implemented_tests and \
-                test not in unimplemented_tests:
-            self.resj["error"] = f"Cannot find testcase {test}."
 
         def time_to_datetime(t):
             """
@@ -459,11 +491,11 @@ with python validate.py --delete-ns or kubectl delete ns {self.ns})."
             tcjn["nodes"].append(cwn)  # current worker node
             d = ""
             try:
+                res = False
                 kernel_version = \
                     self.v1.read_node(n).status.node_info.kernel_version
                 major = int(kernel_version.split(".")[0])
                 minor = int(kernel_version.split(".")[1])
-                res = False
                 if major > min_major:
                     res = True
                 if major == min_major and minor >= min_minor:
@@ -966,8 +998,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config", dest="config_filename", help="Config file name")
     parser.add_argument("--test", dest="test", help="Test case name")
-    parser.add_argument("--label", dest="label", help="Node label")
-    parser.add_argument("--node", dest="node", help="Node name")
+    parser.add_argument("--label", dest="label", help="Node label like kubernetes.io/os or kubernetes.io/os=linux, ignores node-role.kubernetes.io/worker label")
+    parser.add_argument("--node", dest="node", help="Node name, ignores --label")
     parser.add_argument(
         "--delete-ns", dest="delete", help="Delete NS", action="store_true")
     args = parser.parse_args(sys.argv[1:])
@@ -987,6 +1019,6 @@ if __name__ == "__main__":
         val.delete_namespace()
         logger = logging.getLogger(__name__)
         logger.info("Deleted namespace %s", val.ns)
-    elif val.ready:
+    else:
         val.run(test_flag)
-        print(json.dumps(val.endresj, indent=2))
+    print(json.dumps(val.endresj, indent=2))
