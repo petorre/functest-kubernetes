@@ -1,11 +1,13 @@
 # Copyright (C) 2025 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-FROM rockylinux:9
+FROM ubuntu:24.04
 
-RUN dnf update -y && \
-    dnf install -y jq pciutils procps cpupowerutils
-
+RUN apt update -y && \
+    apt upgrade -y && \
+    apt install -y jq pciutils procps && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 COPY image/validation /
 
 WORKDIR /

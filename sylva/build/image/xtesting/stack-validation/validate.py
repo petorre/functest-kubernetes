@@ -26,7 +26,7 @@ from requests.exceptions import RequestException
 CONFIGFILE = "config.json"
 
 
-# pylint: disable=R0904
+# pylint: disable=too-many-lines, disable=too-many-public-methods
 class Validate:
     """
     Class with all the functionality to create namespace, daemonsets and
@@ -45,17 +45,17 @@ class Validate:
             with open(configfile, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except FileNotFoundError:
-            self.resj["error"] = f"Config file {configfile} not found."
+            self.resj["error"] = f"File {configfile} not found."
             self.ready = False
             return None
         except PermissionError:
-            self.resj["error"] = \
-                f"Permission denied when trying to read {configfile}."
+            self.resj["error"] = (
+                f"Permission denied when trying to read {configfile}.")
             self.ready = False
             return None
         except JSONDecodeError as e:
-            self.resj["error"] = \
-                f"Invalid JSON in config file {configfile}: {e}"
+            self.resj["error"] = (
+                f"Invalid JSON in config file {configfile}: {e}")
             self.ready = False
             return None
 
@@ -75,18 +75,27 @@ class Validate:
         self.show_timestamps = s["show"]["timeStamps"]
         self.show_description = s["show"]["description"]
         self.show_ra2spec = s["show"]["ra2Spec"]
+        self.test_cases_dict = {tc["name"]: tc for tc in self.d["testCases"]}
 
     def natural_sort_key(self, s):
         """
-        Function to convert strings to a list of alphanumerical chunks for sorting
+        Function to convert strings to a list of alphanumerical chunks for
+        sorting
         """
-        return [int(text) if text.isdigit() else text.lower() for text in re.split('(\d+)', s)]
+        return [
+            int(text) if text.isdigit() else text.lower()
+            for text in re.split(r'(\d+)', s)]
 
     # label = test only labeled nodes, or None to test all
     # node = test only one worker node, or None to test all
+    # pylint: disable=too-many-locals, disable=too-many-return-statements
+    # pylint: disable=too-many-branches, disable=too-many-statements
     def __init__(self, configfile, debug, label, node):
         self.debug = debug
         self.d = self.open_config(configfile)
+        if self.d is None:
+            self.ready = False
+            return
         self.load_config(self.d["script"])
 
         try:
@@ -111,24 +120,28 @@ class Validate:
                 if found:
                     self.nodes = n
                     self.ready = True
-                    return
                 else:
                     self.resj["error"] = f"Cannot find node with name {node}"
                     self.ready = False
-                    return
-            if label is None and len(ns) == 1:  # will work on 1-node k3s that doesn't have worker label
+                return
+            # will work on 1-node k3s that doesn't have worker label
+            if label is None and len(ns) == 1:
                 n.append(ns[0].metadata.name)
                 self.nodes = n
                 self.ready = True
                 return
             if label is None:
                 for tn in ns:
-                    if tn.metadata.labels.get('node-role.kubernetes.io/worker') is not None:
+                    if tn.metadata.labels.get(
+                            'node-role.kubernetes.io/worker') is not None:
                         n.append(tn.metadata.name)
                 if len(n) > 0:
                     self.nodes = n
                     self.ready = True
                     return
+            lv = None
+            lk = None
+            lsv = None
             for ln in ns:
                 lkv = label.split("=")
                 if len(lkv) >= 1:
@@ -154,7 +167,7 @@ class Validate:
             self.resj["error"] = f"Kubernetes API error: {e}"
             self.ready = False
             return
-        
+
         if len(n) > 0:
             self.nodes = n
             self.ready = True
@@ -164,10 +177,20 @@ class Validate:
                 self.resj["error"] = f"Cannot find node with name {node}"
             else:
                 if label is not None:
-                    self.resj["error"] = \
-                        f"Cannot find node(s) with label {label}"
+                    self.resj["error"] = (
+                        f"Cannot find node(s) with label {label}")
 
-    # pylint: disable=W0311, R0912, R0915
+    def skip_test_case(self, test):
+        """
+        Checks if test case should be skipped
+        Arguments:
+            test = test name
+        """
+        tc = self.test_cases_dict.get(test)
+        if tc is None:
+            return True
+        return tc["skipFromAll"]
+
     def run(self, test):
         """
         Runs test cases
@@ -214,24 +237,40 @@ class Validate:
         if test is None:
             self.create_namespace()
             if self.check_empty_namespace():
+                # schedule all daemonset even if some test cases have
+                #   skipFromAll = true
                 self.create_daemonset(self.multi, True)
                 self.create_daemonset(self.huge2mi, False)
                 self.create_daemonset(self.huge1gi, False)
                 self.create_daemonset(self.reserve, False)
                 self.create_daemonset(self.tunedrt, True)
-                self.validate_anuket_profile_labels()
-                self.validate_linux_distribution()
-                self.validate_kubernetes_apis()
-                self.validate_linux_kernel_version()
-                self.validate_vcpu_quantity()
-                self.validate_storage_quantity()
-                self.validate_nfd()
-                self.validate_smt()
-                self.validate_hugepages()
-                self.validate_system_resource_reservation()
-                self.validate_cpu_pinning()
-                self.validate_physical_storage()
-                self.validate_rt()
+                if not self.skip_test_case("validateAnuketProfileLabels"):
+                    self.validate_anuket_profile_labels()
+                if not self.skip_test_case("validateLinuxDistribution"):
+                    self.validate_linux_distribution()
+                if not self.skip_test_case("validateKubernetesAPIs"):
+                    self.validate_kubernetes_apis()
+                if not self.skip_test_case("validateLinuxKernelVersion"):
+                    self.validate_linux_kernel_version()
+                if not self.skip_test_case("validateVcpuQuantity"):
+                    self.validate_vcpu_quantity()
+                if not self.skip_test_case("validateStorageQuantity"):
+                    self.validate_storage_quantity()
+                if not self.skip_test_case("validateNFD"):
+                    self.validate_nfd()
+                if not self.skip_test_case("validateSMT"):
+                    self.validate_smt()
+                if not self.skip_test_case("validateHugepages"):
+                    self.validate_hugepages()
+                if not self.skip_test_case(
+                        "validateSystemResourceReservation"):
+                    self.validate_system_resource_reservation()
+                if not self.skip_test_case("validateCPUPinning"):
+                    self.validate_cpu_pinning()
+                if not self.skip_test_case("validatePhysicalStorage"):
+                    self.validate_physical_storage()
+                if not self.skip_test_case("validateRT"):
+                    self.validate_rt()
         if test in tests_with_multi_daemonset:
             self.create_namespace()
             if self.check_empty_namespace():
@@ -251,8 +290,7 @@ class Validate:
                 self.create_daemonset(self.huge1gi, True)
                 self.validate_hugepages()
         if test == "validateSMT":
-            if self.check_empty_namespace():
-                self.validate_smt()
+            self.validate_smt()
         if test == "validatePhysicalStorage":
             if self.check_empty_namespace():
                 self.validate_physical_storage()
@@ -261,8 +299,7 @@ class Validate:
         if test == "validateVcpuQuantity":
             self.validate_vcpu_quantity()
         if test == "validateCPUPinning":
-            if self.check_empty_namespace():
-                self.validate_cpu_pinning()
+            self.validate_cpu_pinning()
         if test == "validateNFD":
             self.validate_nfd()
         if test == "validateSystemResourceReservation":
@@ -271,18 +308,17 @@ class Validate:
                 self.create_daemonset(self.reserve, True)
                 self.validate_system_resource_reservation()
         if test == "validateRT":
-            if self.check_empty_namespace():
-                # multi was already deployed above
-                self.create_daemonset(self.tunedrt, True)
-                self.validate_rt()
+            # multi was already deployed above
+            self.create_daemonset(self.tunedrt, True)
+            self.validate_rt()
         if test == "validateTSN":
-            self.resj["error"] = "Current testcase validateTSN doesn't work \
-with virtual networking."
+            self.resj["error"] = (
+                "Current validateTSN doesn't work with virtual networking.")
         #
         # at the end delete namespace
-        if test is None or test in tests_with_multi_daemonset or \
-                test == "validateSystemResourceReservation" or \
-                test == "validateHugepages":
+        if test is None or test in tests_with_multi_daemonset or (
+                test == "validateSystemResourceReservation") or (
+                test == "validateHugepages"):
             self.delete_namespace()
 
         def time_to_datetime(t):
@@ -302,10 +338,10 @@ with virtual networking."
         stop_time = time.time()
         if self.show_timestamps:
             self.resj["timeStamps"] = {}
-            self.resj["timeStamps"]["startTime"] = \
-                f"{time_to_datetime(start_time)}"
-            self.resj["timeStamps"]["stopTime"] = \
-                f"{time_to_datetime(stop_time)}"
+            self.resj["timeStamps"]["startTime"] = (
+                f"{time_to_datetime(start_time)}")
+            self.resj["timeStamps"]["stopTime"] = (
+                f"{time_to_datetime(stop_time)}")
 
     def create_namespace(self):
         """
@@ -340,31 +376,26 @@ with virtual networking."
         r = self.v1.list_pod_for_all_namespaces(watch=False)
         for i in r.items:
             if i.metadata.namespace == self.ns:
-                self.resj["error"] = f"There are pods already running in \
-namespace {self.ns}. Wait after previous test, or manually delete them (like \
-with python validate.py --delete-ns or kubectl delete ns {self.ns})."
+                self.resj["error"] = (
+                    f"There are pods (like {i.metadata.name}) already running"
+                    f" in namespace {self.ns}. Wait after previous test, or "
+                    "manually delete them (like with python validate.py "
+                    f"--delete-ns, or kubectl delete ns {self.ns}).")
                 return False
         return True
 
+    # pylint: disable=broad-exception-caught
     def create_daemonset(self, name, with_sleep):
         """
         Creates daemonset.
         """
-        utils.create_from_yaml(self.cl, f"{self.directory}/{name}.yaml")
-        if with_sleep:
-            time.sleep(self.pod_pause)
-        # now = time.time()
-        # while True:
-        #    some_dont_run = False
-        #    r = self.v1.list_pod_for_all_namespaces(watch=False)
-        #    for i in r.items:
-        #        if i.metadata.namespace == self.ns and \
-        #            i.metadata.name.startswith("test-ptphwclock-"):
-        #            if i.status.phase != "Running":
-        #                some_dont_run = True
-        #    if not some_dont_run or time.time() - now > self.pod_pause:
-        #        break
-        #    time.sleep(1)
+
+        try:
+            utils.create_from_yaml(self.cl, f"{self.directory}/{name}.yaml")
+            if with_sleep:
+                time.sleep(self.pod_pause)
+        except Exception as e:
+            self.resj["error"] = f"Error creating daemonset {name}: {e}"
 
     def add_begin(self, name):  # returns testcase node in result JSON
         """
@@ -382,7 +413,7 @@ with python validate.py --delete-ns or kubectl delete ns {self.ns})."
             tcjn["description"] = description
         if self.show_ra2spec:
             tcjn["ra2Spec"] = ra2spec
-        if name != "validateKubernetesAPIs":  # is the only one on cluster-level
+        if name != "validateKubernetesAPIs":  # the only one on cluster-level
             tcjn["nodes"] = []
         return tcjn
 
@@ -492,8 +523,8 @@ with python validate.py --delete-ns or kubectl delete ns {self.ns})."
             d = ""
             try:
                 res = False
-                kernel_version = \
-                    self.v1.read_node(n).status.node_info.kernel_version
+                kernel_version = (
+                    self.v1.read_node(n).status.node_info.kernel_version)
                 major = int(kernel_version.split(".")[0])
                 minor = int(kernel_version.split(".")[1])
                 if major > min_major:
@@ -508,7 +539,6 @@ with python validate.py --delete-ns or kubectl delete ns {self.ns})."
             if self.debug:
                 cwn["debug"] = d
 
-    # pylint: disable=R0914
     def validate_hugepages(self):
         """
         Test to validate hugepages.
@@ -519,7 +549,7 @@ with python validate.py --delete-ns or kubectl delete ns {self.ns})."
             if tc["name"] == "validateHugepages":
                 types = tc["types"]
         pods = self.v1.list_pod_for_all_namespaces(watch=False)
-        # pylint: disable=R1702
+        # pylint: disable=too-many-nested-blocks
         for n in self.nodes:
             cwn = {"name": f"{n}"}
             tcjn["nodes"].append(cwn)  # current worker node
@@ -531,7 +561,7 @@ with python validate.py --delete-ns or kubectl delete ns {self.ns})."
                 tn = t["name"]
                 alhp = self.v1.read_node(n).status.allocatable.get(
                     f"hugepages-{tn}")
-                if alhp == None:
+                if alhp is None:
                     a = 0
                 else:
                     a = int(re.sub(r'[^\d]', '', alhp))
@@ -542,13 +572,12 @@ with python validate.py --delete-ns or kubectl delete ns {self.ns})."
                 d += f"alloc_{tn}={a}"
             if s > 0:
                 for p in pods.items:
-                    if (p.metadata.namespace == self.ns and \
+                    if (p.metadata.namespace == self.ns and
                             p.spec.node_name == n and (
                             p.metadata.name.startswith(
                                 f"test-{self.huge2mi}-") or
                             p.metadata.name.startswith(
-                                f"test-{self.huge1gi}-")
-                            )):
+                                f"test-{self.huge1gi}-"))):
                         log = self.v1.read_namespaced_pod_log(
                             namespace=self.ns, name=p.metadata.name)
                         hugepages = 0
@@ -568,9 +597,10 @@ with python validate.py --delete-ns or kubectl delete ns {self.ns})."
                                     log_line.split("=")[1])
                             if hugepages > 0:
                                 res = True
-                        d += f", nr_hugepages={nr_hugepages}, \
-meminfo_hugepages_free={meminfo_hugepages_free}, \
-mount_dev_hugepages={mount_dev_hugepages}"
+                        d += (
+                            f", nr_hugepages={nr_hugepages}, meminfo_"
+                            f"hugepages_free={meminfo_hugepages_free}, "
+                            f"mount_dev_hugepages={mount_dev_hugepages}")
             cwn["result"] = str(res).lower()
             if self.debug:
                 cwn["debug"] = d
@@ -582,16 +612,16 @@ mount_dev_hugepages={mount_dev_hugepages}"
         """
         tcjn = self.add_begin("validateSMT")
         pods = self.v1.list_pod_for_all_namespaces(watch=False)
-        # pylint: disable=R1702
+        # pylint: disable=too-many-nested-blocks
         for n in self.nodes:
             cwn = {"name": f"{n}"}
             tcjn["nodes"].append(cwn)  # current worker node
             res = False
             d = ""
             for p in pods.items:
-                if p.metadata.namespace == self.ns and \
-                        p.spec.node_name == n and \
-                        p.metadata.name.startswith(f"test-{self.multi}-"):
+                if (p.metadata.namespace == self.ns and
+                        p.spec.node_name == n and
+                        p.metadata.name.startswith(f"test-{self.multi}-")):
                     log = self.v1.read_namespaced_pod_log(
                         namespace=self.ns, name=p.metadata.name)
                     vcpus = None
@@ -617,9 +647,9 @@ mount_dev_hugepages={mount_dev_hugepages}"
                             if d != "":
                                 d += ", "
                             d += f"sockets={sockets}"
-                    if vcpus is not None and threadspercore is not None \
-                            and corespersocket is not None \
-                            and sockets is not None:
+                    if vcpus is not None and threadspercore is not None and (
+                            corespersocket is not None) and (
+                            sockets is not None):
                         if vcpus == sockets * corespersocket * threadspercore:
                             res = True
             cwn["result"] = str(res).lower()
@@ -629,21 +659,21 @@ mount_dev_hugepages={mount_dev_hugepages}"
     def validate_physical_storage(self):
         """
         Test case to validate if physical storage device type is SSD.
-        Assumes either no hypervisor or that hypervisor is not masking physical
-            storage device type.
+        Assumes either no hypervisor or that hypervisor is not masking
+            physical storage device type.
         """
         tcjn = self.add_begin("validatePhysicalStorage")
         pods = self.v1.list_pod_for_all_namespaces(watch=False)
-        # pylint: disable=R1702
+        # pylint: disable=too-many-nested-blocks
         for n in self.nodes:
             cwn = {"name": f"{n}"}
             tcjn["nodes"].append(cwn)  # current worker node
             res = False
             d = ""
             for p in pods.items:
-                if p.metadata.namespace == self.ns and \
-                        p.spec.node_name == n and \
-                        p.metadata.name.startswith(f"test-{self.multi}-"):
+                if p.metadata.namespace == (
+                        self.ns and p.spec.node_name == n and
+                        p.metadata.name.startswith(f"test-{self.multi}-")):
                     log = self.v1.read_namespaced_pod_log(
                         namespace=self.ns, name=p.metadata.name)
                     res = False
@@ -728,16 +758,16 @@ mount_dev_hugepages={mount_dev_hugepages}"
         """
         tcjn = self.add_begin("validateCPUPinning")
         pods = self.v1.list_pod_for_all_namespaces(watch=False)
-        # pylint: disable=R1702
+        # pylint: disable=too-many-nested-blocks
         for n in self.nodes:
             cwn = {"name": f"{n}"}
             tcjn["nodes"].append(cwn)  # current worker node
             res = False
             d = ""
             for p in pods.items:
-                if p.metadata.namespace == self.ns and \
-                        p.spec.node_name == n and \
-                        p.metadata.name.startswith(f"test-{self.multi}-"):
+                if (p.metadata.namespace == self.ns and
+                        p.spec.node_name == n and
+                        p.metadata.name.startswith(f"test-{self.multi}-")):
                     log = self.v1.read_namespaced_pod_log(
                         namespace=self.ns, name=p.metadata.name)
                     cpusetlimited = None
@@ -764,7 +794,7 @@ mount_dev_hugepages={mount_dev_hugepages}"
         """
         Test if there are enough NFV labels.
         """
-        tcjn = self.add_begin("validateAnuketProfileLabels")
+        tcjn = self.add_begin("validateNFD")
         limit = None
         for tc in self.d["testCases"]:
             if tc["name"] == "validateNFD":
@@ -796,16 +826,16 @@ mount_dev_hugepages={mount_dev_hugepages}"
             if tc["name"] == "validateSystemResourceReservation":
                 checks = tc["checks"]
         pods = self.v1.list_pod_for_all_namespaces(watch=False)
-        # pylint: disable=R1702
+        # pylint: disable=too-many-nested-blocks
         for n in self.nodes:
             cwn = {"name": f"{n}"}
             tcjn["nodes"].append(cwn)  # current worker node
             res = False
             d = "not found"
             for p in pods.items:
-                if p.metadata.namespace == self.ns and \
-                        p.spec.node_name == n and \
-                        p.metadata.name.startswith(f"test-{self.reserve}-"):
+                if p.metadata.namespace == (
+                        self.ns and p.spec.node_name == n and
+                        p.metadata.name.startswith(f"test-{self.reserve}-")):
                     log = self.v1.read_namespaced_pod_log(
                         namespace=self.ns, name=p.metadata.name)
                     res = False
@@ -825,7 +855,6 @@ mount_dev_hugepages={mount_dev_hugepages}"
             if self.debug:
                 cwn["debug"] = d
 
-    # pylint: disable=R0912, R0914, R0915
     def validate_rt(self):
         """
         Test case to validate RT settings:
@@ -841,11 +870,11 @@ mount_dev_hugepages={mount_dev_hugepages}"
                 kernel_names = tc["kernelNames"]
                 preempt_name = tc["preemptName"]
         pods = self.v1.list_pod_for_all_namespaces(watch=False)
-        # pylint: disable=R1702
+        # pylint: disable=too-many-nested-blocks
         for n in self.nodes:
             cwn = {"name": f"{n}"}
             tcjn["nodes"].append(cwn)  # current worker node
-            node_with_multi_pod = False  # for kernelrt
+            node_with_multi_pod = False  # for kernelrt and same vCPU freq
             node_with_tunedrt_pod = False
             res_cpupower = False
             res_kernelrt = False
@@ -853,15 +882,15 @@ mount_dev_hugepages={mount_dev_hugepages}"
             debug_cpupower = ""
             debug_tunedrt = ""
             for p in pods.items:
-                if p.metadata.namespace == self.ns and \
-                        p.spec.node_name == n and \
-                        p.metadata.name.startswith(f"test-{self.multi}-"):
+                if (p.metadata.namespace == self.ns and
+                        p.spec.node_name == n and
+                        p.metadata.name.startswith(f"test-{self.multi}-")):
                     node_with_multi_pod = True
                     log = self.v1.read_namespaced_pod_log(
                         namespace=self.ns, name=p.metadata.name)
                     #
-                    # cpupower frequency-info | grep "CPUs which run at the
-                    #   same hardware frequency"
+                    # grep "MHz" /proc/cpuinfo | awk ' { print $2 } ' |
+                    #     sort -u | wc -l
                     shf = False
                     #
                     for log_line in log.split("\n"):
@@ -901,11 +930,10 @@ mount_dev_hugepages={mount_dev_hugepages}"
                                             pcr = True
                             debug_kernelrt += "; " + log_line
                     res_kernelrt = knr and per and skr and pcr
-                if p.metadata.namespace == self.ns and \
-                        p.spec.node_name == n and \
-                        p.metadata.name.startswith(
-                            f"test-{self.tunedrt}-") and \
-                        p.status.phase == "Running":
+                if (p.metadata.namespace == self.ns and
+                        p.spec.node_name == n and p.metadata.name.startswith(
+                            f"test-{self.tunedrt}-") and
+                        p.status.phase == "Running"):
                     node_with_tunedrt_pod = True
                     log = self.v1.read_namespaced_pod_log(
                         namespace=self.ns, name=p.metadata.name)
@@ -929,8 +957,9 @@ mount_dev_hugepages={mount_dev_hugepages}"
                 res = res_cpupower and res_kernelrt and res_tunedrt
                 cwn["result"] = str(res).lower()
                 if self.debug:
-                    cwn["debug"] = \
-                        f"{debug_cpupower}; {debug_kernelrt}; {debug_tunedrt}"
+                    cwn["debug"] = (
+                        f"{debug_cpupower}; {debug_kernelrt}; "
+                        f"{debug_tunedrt}")
             else:
                 cwn["result"] = "false"
                 e = "Cannot find pods "
@@ -941,48 +970,6 @@ mount_dev_hugepages={mount_dev_hugepages}"
                 cwn["error"] = e
 
 
-# pylint: disable=W0105
-'''
-    def validateTSN(self):
-        name = "validateTSN"
-        tcjn = self.add_begin(name)
-        for tc in self.d["testCases"]:
-            if tc["name"] == name:
-                kernel_names = tc["dev"]
-        pods = self.v1.list_pod_for_all_namespaces(watch=False)
-        res_ptphwclock = False
-        for n in self.nodes:
-            cwn = {"name": f"{n}"}
-            tcjn["nodes"].append(cwn)  # current worker node
-            node_with_ptphwclock_pod = False
-            for p in pods.items:
-                if p.metadata.namespace == self.ns and \
-                        p.metadata.name.startswith(f"test-{PTPHWCLOCK}-"):
-                    node_with_ptphwclock_pod = True
-                    log = self.v1.read_namespaced_pod_log(
-                        namespace=self.ns, name=p.metadata.name)
-                    phc = False  # ethtool -T eth0 | grep PTP
-                    debug_ptphwclock = ""
-                    for l in log.split("\n"):
-                        if "ptphwclock=" in l:
-                            if f'none' in l:
-                                shf = False
-                            else:
-                                shf = True
-                            debug_ptphwclock = l
-                    res_ptphwclock = phc
-            if node_with_ptphwclock_pod:
-                res = res_ptphwclock
-                cwn["result"] = str(res).lower()
-                if self.DEBUG:
-                    cwn["debug"] = debug_ptphwclock
-            else:
-                cwn["result"] = "false"
-                cwn["error"] = f"Cannot find pod test-{self.PTPHWCLOCK}"
-'''
-# pylint: enable=W0105
-
-
 # main
 if __name__ == "__main__":
     # pylint: disable=C0103
@@ -991,21 +978,25 @@ if __name__ == "__main__":
     test_flag = None  # if only single test case should be run
     label_flag = None  # label: if only labeled nodes should be tested
     node_flag = None  # node: if only single node should be tested
-    # pylint: enable=C0103
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--debug", dest="debug", help="Debug", action="store_true")
     parser.add_argument(
         "--config", dest="config_filename", help="Config file name")
     parser.add_argument("--test", dest="test", help="Test case name")
-    parser.add_argument("--label", dest="label", help="Node label like kubernetes.io/os or kubernetes.io/os=linux, then ignores node-role.kubernetes.io/worker label")
-    parser.add_argument("--node", dest="node", help="Node name, then ignores --label")
     parser.add_argument(
-        "--delete-ns", dest="delete", help="Delete namespace", action="store_true")
+        "--label", dest="label", help="Node label like kubernetes.io/os "
+        "or kubernetes.io/os=linux, then ignores "
+        "node-role.kubernetes.io/worker label")
+    parser.add_argument(
+        "--node", dest="node", help="Node name, then ignores --label")
+    parser.add_argument(
+        "--delete-ns", dest="delete", help="Delete namespace",
+        action="store_true")
     args = parser.parse_args(sys.argv[1:])
     if isinstance(args, argparse.Namespace):
         if args.debug:
-            debug_flag = True  # pylint: disable=C0103
+            debug_flag = True
         if args.config_filename is not None:
             cf = args.config_filename
         if args.test is not None:
@@ -1017,8 +1008,8 @@ if __name__ == "__main__":
     val = Validate(cf, debug_flag, label_flag, node_flag)
     if args.delete:
         val.delete_namespace()
-        logging.basicConfig(level = logging.INFO, stream = sys.stdout,
-            format='%(message)s')
+        logging.basicConfig(
+            level=logging.INFO, stream=sys.stdout, format='%(message)s')
         logger = logging.getLogger(__name__)
         logger.info("Deleted namespace %s", val.ns)
     else:

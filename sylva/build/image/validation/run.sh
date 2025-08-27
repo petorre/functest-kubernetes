@@ -66,11 +66,15 @@ fi
 # reserve
 ps -ef | awk ' { printf("ps-ef=%s\n",$0); } '
 
-# cpupowerfreq
+# vCPUs on same frequency
 echo -n "cpussamehwfreq="
-cpupower frequency-info 2>> /dev/null | grep \
-    "CPUs which run at the same hardware frequency" | awk -vFS=":" \
-    ' { print $2 } ' | awk '{gsub(/[ \t]+/, ""); print}'
+freqs=$( grep "cpu MHz" /proc/cpuinfo 2>/dev/null | \
+    awk -vFS=":" ' { print $2 } ' | sort -u | wc -l )
+if [ "${freqs}" -eq 1 ]; then
+    echo 1
+else
+    echo 0
+fi
 
 # tunedrt
 if [ -e /var/log/tuned/tuned.log ]; then

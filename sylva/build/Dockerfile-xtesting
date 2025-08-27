@@ -1,9 +1,8 @@
 # Copyright (C) 2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-FROM alpine:3.21
+FROM alpine:3.22
 
-#COPY xtesting/ /src/xtesting
 COPY image/xtesting /
 
 RUN apk update && \
@@ -12,7 +11,6 @@ RUN apk update && \
     pip3 install --break-system-packages /src
 
 WORKDIR /stack-validation
-# python3 py3-pip
 RUN apk add --no-cache bash jq wget mesa-gl && \
     pip install --no-cache-dir --break-system-packages -r "requirements.txt"
 WORKDIR /bin
@@ -21,16 +19,6 @@ WORKDIR /usr/local/bin
 RUN wget -q "https://dl.k8s.io/release/$( wget -qO - \
         https://dl.k8s.io/release/stable.txt )/bin/linux/amd64/kubectl" && \
     chmod 755 kubectl
-
-#ENV USER=validation
-#ENV UID=65432
-#ENV GID=65432
-#RUN addgroup --gid "${GID}" "${USER}" && \
-#    adduser --disabled-password --gecos "" --home "$(pwd)" --ingroup \
-#        "${USER}" --no-create-home --uid "${UID}" -s /bin/bash "${USER}" && \
-#    mkdir /var/lib/xtesting && \
-#    chown -R validation:validation /var/lib/xtesting  # results
-#USER "${USER}"
 
 WORKDIR /stack-validation
 ENV PYTHONPATH=/stack-validation

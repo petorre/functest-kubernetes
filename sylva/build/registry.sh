@@ -5,4 +5,5 @@
 
 set -e
 
-docker run -d -p 5000:5000 --name registry registry:2.7
+docker run -d --restart always -p 5000:5000 --name registry registry:2.7
+
