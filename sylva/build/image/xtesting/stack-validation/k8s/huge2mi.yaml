@@ -38,9 +38,6 @@ spec:
             - mountPath: /dev/hugepages
               name: hugepages
               readOnly: false
-          env:
-            - name: https_proxy
-            # value: "http://yourProxyFQDNOrIP:port"
           securityContext:
             runAsNonRoot: true
             runAsUser: 65432

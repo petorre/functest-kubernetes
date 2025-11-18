@@ -1,0 +1,24 @@
+# Copyright (C) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+FROM ubuntu:24.04
+
+RUN apt update -y && \
+    apt upgrade -y && \
+    apt install -y jq pciutils procps && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+COPY image/validation /
+
+WORKDIR /
+
+ENV USER=validation
+ENV UID=65432
+ENV GID=65432
+RUN groupadd --gid "${GID}" "${USER}" && \
+    useradd --home "$(pwd)" --gid "${USER}" --no-create-home --uid "${UID}" -s /bin/bash "${USER}"
+USER "${USER}"
+
+CMD ["/run.sh"]
+
+HEALTHCHECK NONE

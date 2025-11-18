@@ -32,9 +32,6 @@ spec:
             limits:
               cpu: 1
               memory: 100Mi
-          env:
-            - name: https_proxy
-            # value: "http://yourProxyFQDNOrIP:port"
           securityContext:
             runAsNonRoot: true
             runAsUser: 65432

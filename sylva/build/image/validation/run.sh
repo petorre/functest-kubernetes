@@ -37,7 +37,7 @@ lspci | awk ' { print "pcidev= " $0 } '
 echo -n "unamerv="
 uname -rv
 echo -n "syskernelrealtime="
-if [ -e /sys/kernel/realtime ]; then
+if [[ -e /sys/kernel/realtime ]]; then
     cat /sys/kernel/realtime
 else
     echo "-1"
@@ -57,7 +57,7 @@ else
     r3=0
 fi
 echo "mount_dev_hugepages=${r3}"
-if [ "${r1}" -gt 0 ] && [ "${r2}" -gt 0 ] && [ "${r3}" -eq 1 ]; then
+if [[ "${r1}" -gt 0 ]] && [[ "${r2}" -gt 0 ]] && [[ "${r3}" -eq 1 ]]; then
     echo "hugepages=1"
 else
     echo "hugepages=0"
@@ -70,14 +70,14 @@ ps -ef | awk ' { printf("ps-ef=%s\n",$0); } '
 echo -n "cpussamehwfreq="
 freqs=$( grep "cpu MHz" /proc/cpuinfo 2>/dev/null | \
     awk -vFS=":" ' { print $2 } ' | sort -u | wc -l )
-if [ "${freqs}" -eq 1 ]; then
+if [[ "${freqs}" -eq 1 ]]; then
     echo 1
 else
     echo 0
 fi
 
 # tunedrt
-if [ -e /var/log/tuned/tuned.log ]; then
+if [[ -e /var/log/tuned/tuned.log ]]; then
     cd /var/log/tuned
     p=$( grep "static tuning from profile" tuned.log | tail -1 )
     if [ $( echo "${p}" | grep -c "realtime" ) -gt 0 ]; then
