@@ -70,7 +70,7 @@ Without previous virtual environment:
 ```
 pip install kubernetes xtesting
 cd build/image/xtesting/stack-validation
-python xtvalidate.py
+python validate.py
 ```
 
 An example is in:
@@ -204,4 +204,5 @@ cd build
 All included test cases were tested on servers with 4th Gen Intel Xeon Scalable Processors, using these Kubernetes and Linux distributions:
 
 * k3s v1.31.6+k3s1 on Ubuntu 22.04.2 LTS with kernel 5.15-realtime on premises
+* k3s v1.33.5+k3s1 on Ubuntu 24.04.3 LTS with kernel 6.14 on EC2 VM
 * k3s v1.31.6+k3s1 on Rocky Linux 9.5 with kernel 5.14 on EC2 VM

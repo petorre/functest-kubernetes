@@ -13,7 +13,7 @@ python validate.py --help
 
 import argparse
 from json.decoder import JSONDecodeError
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import sys
 import time
@@ -138,7 +138,10 @@ class Validate:
                 if len(n) > 0:
                     self.nodes = n
                     self.ready = True
-                    return
+                else:
+                    self.resj["error"] = f"No nodes found"
+                    self.ready = False
+                return
             lv = None
             lk = None
             lsv = None
@@ -332,7 +335,7 @@ class Validate:
             Returns:
                 str: Formatted date and time string.
             """
-            dt = datetime.utcfromtimestamp(t)
+            dt = datetime.fromtimestamp(t, timezone.utc)
             return dt.strftime("%a %b %d %H:%M:%S UTC %Y")
 
         stop_time = time.time()
