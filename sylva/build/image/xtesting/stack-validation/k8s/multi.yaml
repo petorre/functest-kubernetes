@@ -21,10 +21,28 @@ spec:
         app.kubernetes.io/name: test-multi
         app.kubernetes.io/component: backend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 65432
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: pci-ids
+          emptyDir:
+            medium: Memory
+        - name: script
+          configMap:
+            name: run-sh
+            defaultMode: 0555
       containers:
         - name: test-multi
-          image: localhost:5000/validation
+          image: busybox:1.37
           imagePullPolicy: Always
+          command: ["/bin/sh"]
+          args: ["/scripts/run.sh"]
+          env:
+          - name: MULTI
+            value: "True"
           resources:
             requests:
               cpu: 1
@@ -32,6 +50,12 @@ spec:
             limits:
               cpu: 1
               memory: 100Mi
+          volumeMounts:
+            - name: pci-ids
+              mountPath: /pciids
+            - name: script
+              mountPath: /scripts
+              readOnly: true
           securityContext:
             runAsNonRoot: true
             runAsUser: 65432

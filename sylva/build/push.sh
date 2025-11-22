@@ -7,5 +7,5 @@ set -e
 
 source config
 
-docker push "${IMAGENAME_VALIDATION}"
+#docker push "${IMAGENAME_VALIDATION}"
 docker push "${IMAGENAME_XTESTING}"

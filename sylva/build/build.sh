@@ -25,8 +25,8 @@ docker_rmi_build () {
     fi
 }
 
-echo "Building ${IMAGENAME_VALIDATION}"
-docker_rmi_build Dockerfile-validation "${IMAGENAME_VALIDATION}"
+#echo "Building ${IMAGENAME_VALIDATION}"
+#docker_rmi_build Dockerfile-validation "${IMAGENAME_VALIDATION}"
 
 echo "Building ${IMAGENAME_XTESTING}"
 if [[ -z "${KUBECONFIG}" ]] && [[ -f ~/.kube/config ]]; then

@@ -21,10 +21,28 @@ spec:
         app.kubernetes.io/name: test-huge2mi
         app.kubernetes.io/component: backend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 65432
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: script
+          configMap:
+            name: run-sh
+            defaultMode: 0555
+        - name: hugepages
+          emptyDir:
+            medium: HugePages
       containers:
         - name: test-huge2mi
-          image: localhost:5000/validation
+          image: busybox:1.37
           imagePullPolicy: Always
+          command: ["/bin/sh"]
+          args: ["/scripts/run.sh"]
+          env:
+            - name: HUGE
+              value: "True"
           resources:
             requests:
               cpu: 100m
@@ -35,9 +53,12 @@ spec:
               memory: 100Mi
               hugepages-2Mi: 200Mi
           volumeMounts:
-            - mountPath: /dev/hugepages
-              name: hugepages
+            - name: hugepages
+              mountPath: /dev/hugepages
               readOnly: false
+            - name: script
+              mountPath: /scripts
+              readOnly: true
           securityContext:
             runAsNonRoot: true
             runAsUser: 65432
@@ -50,7 +71,3 @@ spec:
             seccompProfile:
               type: RuntimeDefault
             readOnlyRootFilesystem: true
-      volumes:
-        - name: hugepages
-          emptyDir:
-            medium: HugePages

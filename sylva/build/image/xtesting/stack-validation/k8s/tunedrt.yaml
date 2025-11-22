@@ -21,14 +21,29 @@ spec:
         app.kubernetes.io/name: test-tunedrt
         app.kubernetes.io/component: backend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 65432
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: script
+          configMap:
+            name: run-sh
+            defaultMode: 0555
+        - name: varlogtuned
+          hostPath:
+            path: /var/log/tuned
+            type: Directory
       containers:
         - name: test-tunedrt
-          image: localhost:5000/validation
+          image: busybox:1.37
           imagePullPolicy: Always
-          volumeMounts:
-            - name: varlogtuned
-              mountPath: /var/log/tuned
-              readOnly: true
+          command: ["/bin/sh"]
+          args: ["/scripts/run.sh"]
+          env:
+          - name: TUNEDRT
+            value: "True"
           resources:
             requests:
               cpu: 100m
@@ -36,6 +51,13 @@ spec:
             limits:
               cpu: 100m
               memory: 100Mi
+          volumeMounts:
+            - name: varlogtuned
+              mountPath: /var/log/tuned
+              readOnly: true
+            - name: script
+              mountPath: /scripts
+              readOnly: true
           securityContext:
             runAsNonRoot: true
             runAsUser: 65432
@@ -47,8 +69,3 @@ spec:
             seccompProfile:
               type: RuntimeDefault
             readOnlyRootFilesystem: true
-      volumes:
-        - name: varlogtuned
-          hostPath:
-            path: /var/log/tuned
-            type: Directory

@@ -6,41 +6,29 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   namespace: stack-validation
-  name: test-reserve
+  name: test-tunedrt
   labels:
-    app.kubernetes.io/name: test-reserve
+    app.kubernetes.io/name: test-tunedrt
     app.kubernetes.io/component: test-backend
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: test-reserve
+      app.kubernetes.io/name: test-tunedrt
       app.kubernetes.io/component: backend
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: test-reserve
+        app.kubernetes.io/name: test-tunedrt
         app.kubernetes.io/component: backend
     spec:
-      hostPID: true
-      securityContext:
-        runAsNonRoot: true
-        fsGroup: 65432
-        seccompProfile:
-          type: RuntimeDefault
-      volumes:
-        - name: script
-          configMap:
-            name: run-sh
-            defaultMode: 0555
       containers:
-        - name: test-reserve
-          image: busybox:1.37
+        - name: test-tunedrt
+          image: localhost:5000/validation
           imagePullPolicy: Always
-          command: ["/bin/sh"]
-          args: ["/scripts/run.sh"]
-          env:
-          - name: RESERVE
-            value: "True"
+          volumeMounts:
+            - name: varlogtuned
+              mountPath: /var/log/tuned
+              readOnly: true
           resources:
             requests:
               cpu: 100m
@@ -48,10 +36,6 @@ spec:
             limits:
               cpu: 100m
               memory: 100Mi
-          volumeMounts:
-            - name: script
-              mountPath: /scripts
-              readOnly: true
           securityContext:
             runAsNonRoot: true
             runAsUser: 65432
@@ -63,3 +47,8 @@ spec:
             seccompProfile:
               type: RuntimeDefault
             readOnlyRootFilesystem: true
+      volumes:
+        - name: varlogtuned
+          hostPath:
+            path: /var/log/tuned
+            type: Directory

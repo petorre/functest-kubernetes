@@ -20,4 +20,4 @@ if [[ -e "image/xtesting/etc/kubeconfig" ]]; then
 fi
 
 docker_rmi "${IMAGENAME_XTESTING}"
-docker_rmi "${IMAGENAME_VALIDATION}"
+#docker_rmi "${IMAGENAME_VALIDATION}"
