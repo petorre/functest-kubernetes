@@ -1,0 +1,26 @@
+---
+- hosts:
+    - 127.0.0.1
+  roles:
+    - role: collivier.xtesting
+      project: validate
+      registry_deploy: true
+      repo: 127.0.0.1
+      dport: 5000
+      suites:
+        - container: stack-validation-xtesting
+          tests:
+            - validateAll
+            # - validateLinuxDistribution
+            # - validateKubernetesAPIs
+            # - validateLinuxKernelVersion
+            # - validateAnuketProfileLabels
+            # - validateSMT
+            # - validatePhysicalStorage
+            # - validateStorageQuantity
+            # - validateVcpuQuantity
+            # - validateCPUPinning
+            # - validateNFD
+            # - validateSystemResourceReservation
+            # - validateHugepages
+            # - validateRT

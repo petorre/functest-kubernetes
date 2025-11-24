@@ -1,0 +1,12 @@
+# Copyright (C) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: stack-validation
+  name: proxy-config
+type: Opaque
+stringData:
+  http_proxy: "" # "http://username:password@proxy.example.com:8080"

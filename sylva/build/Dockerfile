@@ -1,0 +1,28 @@
+# Copyright (C) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+FROM alpine:3.22
+
+COPY image /
+
+RUN apk update && \
+    apk --no-cache add --update python3 py3-pip py3-wheel git py3-lxml && \
+    git init /src && \
+    pip3 install --break-system-packages /src
+
+WORKDIR /stack-validation
+RUN apk add --no-cache bash jq wget mesa-gl
+RUN pip install --no-cache-dir --break-system-packages -r "requirements.txt" -c "upper-constraints.txt"
+WORKDIR /bin
+RUN ln -s /usr/bin/python
+WORKDIR /usr/local/bin
+RUN wget -q "https://dl.k8s.io/release/$( wget -qO - \
+        https://dl.k8s.io/release/stable.txt )/bin/linux/amd64/kubectl" && \
+    chmod 755 kubectl
+
+WORKDIR /stack-validation
+ENV PYTHONPATH=/stack-validation
+ENV KUBECONFIG=/etc/kubeconfig
+CMD ["run_tests", "-t", "all"]
+
+HEALTHCHECK NONE
