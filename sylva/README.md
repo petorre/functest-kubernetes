@@ -27,12 +27,6 @@ cd build
 ./build.sh
 ```
 
-Start local Docker registry (image repository) with:
-
-```
-./registry.sh
-```
-
 Use script [build/push.sh](./build/push.sh) or do similar.
 
 ```
