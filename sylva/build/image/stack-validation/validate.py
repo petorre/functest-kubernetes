@@ -19,6 +19,7 @@ import sys
 import time
 import logging
 import re
+import yaml
 from kubernetes import client, config, utils  # pip install kubernetes
 from kubernetes.client.rest import ApiException
 from requests.exceptions import RequestException
@@ -67,11 +68,12 @@ class Validate:
         self.pod_pause = s["podPause"]
         self.directory = s["deployFiles"]["directory"]
         self.ns = s["podNamespace"]
-        self.multi = s["deployFiles"]["multi"]["name"]
-        self.huge2mi = s["deployFiles"]["huge2mi"]["name"]
-        self.huge1gi = s["deployFiles"]["huge1gi"]["name"]
-        self.reserve = s["deployFiles"]["reserve"]["name"]
-        self.tunedrt = s["deployFiles"]["tunedrt"]["name"]
+        self.configmap_run_sh = s["deployFiles"]["configmap_run_sh"]
+        self.multi = s["deployFiles"]["multi"]
+        self.huge2mi = s["deployFiles"]["huge2mi"]
+        self.huge1gi = s["deployFiles"]["huge1gi"]
+        self.reserve = s["deployFiles"]["reserve"]
+        self.tunedrt = s["deployFiles"]["tunedrt"]
         self.show_timestamps = s["show"]["timeStamps"]
         self.show_description = s["show"]["description"]
         self.show_ra2spec = s["show"]["ra2Spec"]
@@ -139,7 +141,7 @@ class Validate:
                     self.nodes = n
                     self.ready = True
                 else:
-                    self.resj["error"] = f"No nodes found"
+                    self.resj["error"] = "No nodes found"
                     self.ready = False
                 return
             lv = None
@@ -239,6 +241,7 @@ class Validate:
         self.resj["testCases"] = []
         if test is None:
             self.create_namespace()
+            self.create_configmap_run_sh()
             if self.check_empty_namespace():
                 # schedule all daemonset even if some test cases have
                 #   skipFromAll = true
@@ -276,6 +279,7 @@ class Validate:
                     self.validate_rt()
         if test in tests_with_multi_daemonset:
             self.create_namespace()
+            self.create_configmap_run_sh()
             if self.check_empty_namespace():
                 self.create_daemonset(self.multi, True)
         if test == "validateAnuketProfileLabels":
@@ -288,6 +292,7 @@ class Validate:
             self.validate_linux_kernel_version()
         if test == "validateHugepages":
             self.create_namespace()
+            self.create_configmap_run_sh()
             if self.check_empty_namespace():
                 self.create_daemonset(self.huge2mi, False)
                 self.create_daemonset(self.huge1gi, True)
@@ -307,6 +312,7 @@ class Validate:
             self.validate_nfd()
         if test == "validateSystemResourceReservation":
             self.create_namespace()
+            self.create_configmap_run_sh()
             if self.check_empty_namespace():
                 self.create_daemonset(self.reserve, True)
                 self.validate_system_resource_reservation()
@@ -371,6 +377,27 @@ class Validate:
         Deletes namespace.
         """
         self.v1.delete_namespace(f"{self.ns}")  # doesn't wait
+
+    def create_configmap_run_sh(self):
+        """
+        Loads a ConfigMap definition from a YAML file and creates it
+        if it does not already exist in the namespace.
+        """
+        try:
+            with open(f"{self.directory}/{self.configmap_run_sh}.yaml", "r",
+            encoding="utf-8") as f:
+                cm_yaml = yaml.safe_load(f)
+            self.v1.create_namespaced_config_map(
+                namespace=self.ns,
+                body=cm_yaml
+            )
+        except FileNotFoundError:
+            self.resj["error"] = ( "ConfigMap YAML file not found: "
+            "{self.directory}/{self.configmap_run_sh}.yaml" )
+        except ApiException as e:
+            self.resj["error"] = f"Kubernetes API Exception: {e}"
+        except RequestException as e:
+            self.resj["error"] = f"Network Request Exception: {e}"
 
     def check_empty_namespace(self):
         """

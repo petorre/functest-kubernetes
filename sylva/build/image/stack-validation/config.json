@@ -14,21 +14,12 @@
     "deployFiles": {
       "directory": "k8s",
       "namespace": "ns",
-      "multi": {
-        "name": "multi"
-      },
-      "huge2mi": {
-        "name": "huge2mi"
-      },
-      "huge1gi": {
-        "name": "huge1gi"
-      },
-      "reserve": {
-        "name": "reserve"
-      },
-      "tunedrt": {
-        "name": "tunedrt"
-      }
+      "configmap_run_sh": "run-sh",
+      "multi": "multi",
+      "huge2mi": "huge2mi",
+      "huge1gi": "huge1gi",
+      "reserve": "reserve",
+      "tunedrt": "tunedrt"
     },
     "netPolicyPause": 5
   },

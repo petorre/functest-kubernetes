@@ -3,7 +3,7 @@
 
 FROM alpine:3.22
 
-COPY image/xtesting /
+COPY image /
 
 RUN apk update && \
     apk --no-cache add --update python3 py3-pip py3-wheel git py3-lxml && \

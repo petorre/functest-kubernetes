@@ -1,2 +1,1 @@
-IMAGENAME_XTESTING="127.0.0.1:5000/stack-validation-xtesting"
-#IMAGENAME_VALIDATION="127.0.0.1:5000/validation"
+IMAGENAME="127.0.0.1:5000/stack-validation-xtesting"

@@ -25,10 +25,7 @@ docker_rmi_build () {
     fi
 }
 
-#echo "Building ${IMAGENAME_VALIDATION}"
-#docker_rmi_build Dockerfile-validation "${IMAGENAME_VALIDATION}"
-
-echo "Building ${IMAGENAME_XTESTING}"
+echo "Building ${IMAGENAME}"
 if [[ -z "${KUBECONFIG}" ]] && [[ -f ~/.kube/config ]]; then
     KUBECONFIG=~/.kube/config
 fi
@@ -36,5 +33,5 @@ if [[ ! -e "${KUBECONFIG}" ]]; then
     echo "Error: no KUBECONFIG file"
     exit 1
 fi
-cp -f "${KUBECONFIG}" "image/xtesting/etc/kubeconfig"
-docker_rmi_build Dockerfile-xtesting "${IMAGENAME_XTESTING}"
+cp -f "${KUBECONFIG}" "image/etc/kubeconfig"
+docker_rmi_build Dockerfile "${IMAGENAME}"
