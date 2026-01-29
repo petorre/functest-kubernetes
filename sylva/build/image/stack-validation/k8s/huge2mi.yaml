@@ -43,6 +43,8 @@ spec:
           env:
             - name: HUGE
               value: "True"
+            - name: HUGE_SIZE
+              value: "2Mi"
           resources:
             requests:
               cpu: 100m

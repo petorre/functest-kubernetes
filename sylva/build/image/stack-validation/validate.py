@@ -20,7 +20,7 @@ import time
 import logging
 import re
 import yaml
-from kubernetes import client, config, utils  # pip install kubernetes
+from kubernetes import client, config, utils  # pip install "kubernetes>32.0.0"
 from kubernetes.client.rest import ApiException
 from requests.exceptions import RequestException
 
@@ -610,27 +610,47 @@ class Validate:
                                 f"test-{self.huge1gi}-"))):
                         log = self.v1.read_namespaced_pod_log(
                             namespace=self.ns, name=p.metadata.name)
-                        hugepages = 0
-                        nr_hugepages = 0
-                        meminfo_hugepages_free = 0
-                        mount_dev_hugepages = 0
+                        hugepages_2Mi = 0
+                        hugepages_1Gi = 0
+                        nr_hugepages_2Mi = 0
+                        nr_hugepages_1Gi = 0
+                        free_hugepages_2Mi = 0
+                        free_hugepages_1Gi = 0
+                        mount_hugetlbfs_2Mi = 0
+                        mount_hugetlbfs_1Gi = 0
                         for log_line in log.split("\n"):
-                            if log_line.startswith("hugepages="):
-                                hugepages = int(log_line.split("=")[1])
-                            if log_line.startswith("nr_hugepages"):
-                                nr_hugepages = int(log_line.split("=")[1])
-                            if log_line.startswith("meminfo_HugePages_Free"):
-                                meminfo_hugepages_free = int(
+                            if log_line.startswith("hugepages_2Mi="):
+                                hugepages_2Mi = int(log_line.split("=")[1])
+                            if log_line.startswith("hugepages_1Gi="):
+                                hugepages_1Gi = int(log_line.split("=")[1])
+                            if log_line.startswith("nr_hugepages_2Mi="):
+                                nr_hugepages_2Mi = int(log_line.split("=")[1])
+                            if log_line.startswith("nr_hugepages_1Gi="):
+                                nr_hugepages_1Gi = int(log_line.split("=")[1])
+                            if log_line.startswith("free_hugepages_2Mi="):
+                                free_hugepages_2Mi = int(
                                     log_line.split("=")[1])
-                            if log_line.startswith("mount_dev_hugepages"):
-                                mount_dev_hugepages = int(
+                            if log_line.startswith("free_hugepages_1Gi="):
+                                free_hugepages_1Gi = int(
                                     log_line.split("=")[1])
-                            if hugepages > 0:
+                            if log_line.startswith("mount_hugetlbfs_2Mi="):
+                                mount_hugetlbfs_2Mi = int(
+                                    log_line.split("=")[1])
+                            if log_line.startswith("mount_hugetlbfs_1Gi="):
+                                mount_hugetlbfs_1Gi = int(
+                                    log_line.split("=")[1])
+                            if hugepages_2Mi > 0 or hugepages_1Gi > 0:
                                 res = True
-                        d += (
-                            f", nr_hugepages={nr_hugepages}, meminfo_"
-                            f"hugepages_free={meminfo_hugepages_free}, "
-                            f"mount_dev_hugepages={mount_dev_hugepages}")
+                        if hugepages_2Mi > 0:
+                            d += (
+                                f", nr_hugepages_2Mi={nr_hugepages_2Mi}, "
+                                f"free_hugepages_2Mi={free_hugepages_2Mi}, "
+                                f"mount_hugetlbfs_2Mi={mount_hugetlbfs_2Mi}")
+                        if hugepages_1Gi > 0:
+                            d += (
+                                f", nr_hugepages_1Gi={nr_hugepages_1Gi}, "
+                                f"free_hugepages_1Gi={free_hugepages_1Gi}, "
+                                f"mount_hugetlbfs_1Gi={mount_hugetlbfs_1Gi}")
             cwn["result"] = str(res).lower()
             if self.debug:
                 cwn["debug"] = d

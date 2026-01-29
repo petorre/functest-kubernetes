@@ -117,20 +117,20 @@ data:
 
     # huge
     if [[ "${HUGE}" == "True" ]]; then
-        r1=$( cat /proc/sys/vm/nr_hugepages )
-        echo "nr_hugepages=${r1}"
-        r2=$( awk ' $1=="HugePages_Free:" { f=$2 } END { print f } ' /proc/meminfo )
-        echo "meminfo_HugePages_Free=${r2}"
-        if mount | grep -q /dev/hugepages; then
-            r3=$( mount | grep -c /dev/hugepages )
+        huge_size_kB=$( echo "${HUGE_SIZE}" | sed "s/2Mi/2048/g; s/1Gi/1048576/g" )
+        huge_size_M=$( echo "${HUGE_SIZE}" | sed "s/2Mi/2M/g; s/1Gi/1024M/g" )
+        sys_huge_dir="/sys/kernel/mm/hugepages/hugepages-${huge_size_kB}kB"
+        #r1=$( cat /proc/sys/vm/nr_hugepages )
+        r1=$( cat "${sys_huge_dir}/nr_hugepages" )
+        echo "nr_hugepages_${HUGE_SIZE}=${r1}"
+        r2=$( cat "${sys_huge_dir}/free_hugepages" )
+        echo "free_hugepages_${HUGE_SIZE}=${r2}"
+        r3=$( mount | grep "type hugetlbfs" | grep -c "pagesize=${huge_size_M}" )
+        echo "mount_hugetlbfs_${HUGE_SIZE}=${r3}"
+        if [[ "${r1}" -gt 0 ]] && [[ "${r2}" -gt 0 ]] && [[ "${r3}" -eq 1 ]]; then
+            echo "hugepages_${HUGE_SIZE}=1"
         else
-            r3=0
-        fi
-        echo "mount_dev_hugepages=${r3}"
-        if [ "${r1}" -gt 0 ] && [ "${r2}" -gt 0 ] && [ "${r3}" -eq 1 ]; then
-            echo "hugepages=1"
-        else
-            echo "hugepages=0"
+            echo "hugepages_${HUGE_SIZE}=0"
         fi
     fi
 
