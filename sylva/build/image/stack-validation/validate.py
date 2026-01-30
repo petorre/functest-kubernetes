@@ -68,6 +68,7 @@ class Validate:
         self.pod_pause = s["podPause"]
         self.directory = s["deployFiles"]["directory"]
         self.ns = s["podNamespace"]
+        self.deploy_ns = s["deployFiles"]["namespace"]
         self.configmap_run_sh = s["deployFiles"]["configmap_run_sh"]
         self.multi = s["deployFiles"]["multi"]
         self.huge2mi = s["deployFiles"]["huge2mi"]
@@ -364,13 +365,16 @@ class Validate:
                 if i.metadata.name == self.ns:
                     ns_exists = True
             if not ns_exists:
-                namespace = client.V1Namespace(metadata={'name': self.ns})
-                self.v1.create_namespace(namespace)
+                utils.create_from_yaml(self.cl, f"{self.directory}/{self.deploy_ns}.yaml")
+                time.sleep(self.ns_pause)
+                #namespace = client.V1Namespace(metadata={'name': self.ns})
+                #self.v1.create_namespace(namespace)
         except ApiException as e:
             self.resj["error"] = f"Kubernetes API Exception: {e}"
         except RequestException as e:
             self.resj["error"] = f"Network Request Exception: {e}"
-        time.sleep(self.ns_pause)
+        except Exception as e:
+            self.resj["error"] = f"Error creating namespace {self.ns}: {e}"
 
     def delete_namespace(self):
         """
