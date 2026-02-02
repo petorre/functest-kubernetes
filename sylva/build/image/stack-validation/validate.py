@@ -367,8 +367,6 @@ class Validate:
             if not ns_exists:
                 utils.create_from_yaml(self.cl, f"{self.directory}/{self.deploy_ns}.yaml")
                 time.sleep(self.ns_pause)
-                #namespace = client.V1Namespace(metadata={'name': self.ns})
-                #self.v1.create_namespace(namespace)
         except ApiException as e:
             self.resj["error"] = f"Kubernetes API Exception: {e}"
         except RequestException as e:
@@ -751,9 +749,6 @@ class Validate:
                 cwn["debug"] = d
 
     def validate_storage_quantity(self):
-        """
-        Test case to validate storage is > set GB.
-        """
         tcjn = self.add_begin("validateStorageQuantity")
         limit = None
         for tc in self.d["testCases"]:
@@ -761,13 +756,31 @@ class Validate:
                 limit = tc["limit"]
         for n in self.nodes:
             cwn = {"name": f"{n}"}
-            tcjn["nodes"].append(cwn)  # current worker node
+            tcjn["nodes"].append(cwn)
             res = False
             d = ""
             try:
-                storage_bytes = int(
-                    self.v1.read_node(n).status.allocatable.get(
-                        "ephemeral-storage"))
+                quantity_str = self.v1.read_node(n).status.allocatable.get("ephemeral-storage")
+                multipliers = {
+                    "Ki": 1024,
+                    "Mi": 1024**2,
+                    "Gi": 1024**3,
+                    "Ti": 1024**4,
+                    "Pi": 1024**5,
+                    "Ei": 1024**6,
+                    "K": 1000,
+                    "M": 1000**2,
+                    "G": 1000**3,
+                    "T": 1000**4,
+                    "P": 1000**5,
+                    "E": 1000**6
+                }
+                for suffix, multiplier in multipliers.items():
+                    if quantity_str.endswith(suffix):
+                        storage_bytes = int(float(quantity_str[:-len(suffix)]) * multiplier)
+                        break
+                else:
+                    storage_bytes = int(float(quantity_str))
                 storage_gib = int(storage_bytes / (1024 ** 3))
                 if limit is not None and storage_gib >= limit:
                     res = True
